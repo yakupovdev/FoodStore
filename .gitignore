@@ -1,0 +1,62 @@
+# ======================
+# Go build artifacts
+# ======================
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.prof
+*.cover
+
+# Binaries
+bin/
+dist/
+
+# ======================
+# Go workspace & tooling
+# ======================
+go.work
+go.work.sum
+
+# Go module cache (usually outside repo, but just in case)
+pkg/
+
+# ======================
+# Coverage & debug
+# ======================
+coverage/
+coverage.out
+debug/
+__debug_bin
+
+# ======================
+# JetBrains GoLand / IntelliJ
+# ======================
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# ======================
+# OS files
+# ======================
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ======================
+# Logs
+# ======================
+*.log
+
+# ======================
+# Env files
+# ======================
+.env
+.env.local
+.env.*.local
