@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -18,7 +19,8 @@ func NewPostgres(conn *pg.Conn) *Postgres {
 	}
 }
 
-func (p *Postgres) Create(login string, password string, Type string, balance float64) (int, error) {
+func (p *Postgres) CreateUser(login string, password string, Type string, balance float64) (int, error) {
+	log.Println("VATAHELL")
 	ctx := context.Background()
 	stmt := `INSERT INTO users (login, password, type,created_at,last_enter,balance) VALUES ($1, $2, $3, NOW(), NOW(), $4) RETURNING id`
 	log.Println("SRABOTALO")
@@ -30,7 +32,7 @@ func (p *Postgres) Create(login string, password string, Type string, balance fl
 	return id, nil
 }
 
-func (p *Postgres) Login(login string, password string) (int, error) {
+func (p *Postgres) LoginUser(login string, password string) (int, error) {
 	ctx := context.Background()
 	stmt := `SELECT id FROM users WHERE login=$1 AND password=$2`
 
@@ -45,4 +47,19 @@ func (p *Postgres) Login(login string, password string) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (p *Postgres) GetUserByLogin(login string) (bool, error) {
+	ctx := context.Background()
+	stmt := `SELECT 1 FROM users WHERE login=$1`
+
+	var one int
+	err := p.Conn.QueryRow(ctx, stmt, login).Scan(&one)
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, pg.ErrNoRows) {
+		return false, nil
+	}
+	return false, fmt.Errorf("get user by login failed: %w", err)
 }

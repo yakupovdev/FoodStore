@@ -1,20 +1,26 @@
-package service
+package security
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
-	"net/http"
-	"strings"
+	"os"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("super-secret-key-change-me")
+var jwtSecret = []byte(os.Getenv("SECRET_KEY"))
 
 type Claims struct {
 	UserID int64 `json:"user_id"`
 	jwt.RegisteredClaims
+}
+
+func HashPassword(password string) string {
+	hash := sha256.Sum256([]byte(password))
+	hashHex := hex.EncodeToString(hash[:])
+	return hashHex
 }
 
 func GenerateToken(userID int64) (string, error) {
@@ -54,36 +60,4 @@ func ParseToken(tokenStr string) (*Claims, error) {
 	}
 
 	return claims, nil
-}
-
-func AuthMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		header := c.GetHeader("Authorization")
-		if header == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "missing Authorization header",
-			})
-			return
-		}
-
-		parts := strings.SplitN(header, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid Authorization format",
-			})
-			return
-		}
-
-		claims, err := ParseToken(parts[1])
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "invalid or expired token",
-			})
-			return
-		}
-
-		c.Set("user_id", claims.UserID)
-
-		c.Next()
-	}
 }

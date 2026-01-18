@@ -2,13 +2,11 @@ package service
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yakupovdev/FoodStore/internal/model"
+	"github.com/yakupovdev/FoodStore/internal/handler"
 	"github.com/yakupovdev/FoodStore/internal/storage"
 )
 
@@ -22,57 +20,11 @@ func SetupRouter(pg *storage.Postgres) *gin.Engine {
 	auth := router.Group("/auth")
 	{
 		auth.POST("/register", func(c *gin.Context) {
-			var req model.UserData
-			hash := sha256.Sum256([]byte(req.Password))
-			hashHex := hex.EncodeToString(hash[:])
-			if err := c.ShouldBindJSON(&req); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-				return
-			}
-			if pg == nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database not initialized"})
-				return
-			}
-			_, err := pg.Create(req.Login, hashHex, req.Type, req.Balance)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
-
-			c.JSON(http.StatusOK, gin.H{"message": "User registered"})
+			handler.RegisterHandlers(c, pg)
 		})
 
 		auth.POST("/login", func(c *gin.Context) {
-			var req model.AuthRequest
-			hash := sha256.Sum256([]byte(req.Password))
-			hashHex := hex.EncodeToString(hash[:])
-			if err := c.ShouldBindJSON(&req); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-				return
-			}
-			if pg == nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Database not initialized"})
-				return
-			}
-			userID, err := pg.Login(req.Login, hashHex)
-			if err != nil {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-				return
-			}
-
-			token, err := GenerateToken(int64(userID))
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": "could not generate token",
-				})
-				return
-			}
-
-			c.JSON(http.StatusOK, gin.H{
-				"access_token": token,
-			})
-
-			c.JSON(http.StatusOK, gin.H{"message": "User logged in"})
+			handler.LoginHandlers(c, pg)
 		})
 
 	}
