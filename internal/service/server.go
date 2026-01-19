@@ -9,14 +9,14 @@ import (
 	"github.com/yakupovdev/FoodStore/internal/handler/auth_handler"
 	"github.com/yakupovdev/FoodStore/internal/handler/mail_handler"
 	"github.com/yakupovdev/FoodStore/internal/handler/security_handler"
-	"github.com/yakupovdev/FoodStore/internal/storage"
+	"github.com/yakupovdev/FoodStore/internal/repository"
 )
 
 type Server struct {
 	srv *http.Server
 }
 
-func SetupRouter(pg *storage.Postgres) *gin.Engine {
+func SetupRouter(pg *repository.Postgres) *gin.Engine {
 	router := gin.Default()
 
 	auth := router.Group("/auth")

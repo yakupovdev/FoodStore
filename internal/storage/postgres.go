@@ -2,156 +2,83 @@ package storage
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
-	"time"
 
 	pg "github.com/jackc/pgx/v5"
-	"github.com/yakupovdev/FoodStore/internal/security"
 )
 
-type Postgres struct {
+type Config struct {
+	Database string `env:"POSTGRES_DB"`
+	HOST     string `env:"POSTGRES_URI"`
+	Port     uint16 `env:"POSTGRESQL_PORT"`
+	Username string `env:"POSTGRESQL_USERNAME"`
+	Password string `env:"POSTGRESQL_PASSWORD"`
+}
+
+type DB struct {
 	Conn *pg.Conn
 }
 
-func NewPostgres(conn *pg.Conn) *Postgres {
-	return &Postgres{
-		Conn: conn,
-	}
-}
-
-func (p *Postgres) CreateUser(email string, password string, Type string, balance float64) (int, error) {
-	log.Println("VATAHELL")
-	ctx := context.Background()
-	stmt := `INSERT INTO users (email, password, type,created_at,last_enter,balance) VALUES ($1, $2, $3, NOW(), NOW(), $4) RETURNING id`
-	log.Println("SRABOTALO")
-	var id int
-	if err := p.Conn.QueryRow(ctx, stmt, email, password, Type, balance).Scan(&id); err != nil {
-		return 0, fmt.Errorf("failed to create user: %w", err)
-	}
-
-	return id, nil
-}
-
-func (p *Postgres) LoginUser(email string, password string) (int, error) {
-	ctx := context.Background()
-	stmt := `SELECT id FROM users WHERE email=$1 AND password=$2`
-
-	var id int
-	if err := p.Conn.QueryRow(ctx, stmt, email, password).Scan(&id); err != nil {
-		return 0, fmt.Errorf("failed to login user: %w", err)
-	}
-	stmt = `UPDATE users SET last_enter = NOW() WHERE email=$1 AND password=$2;`
-	_, err := p.Conn.Exec(ctx, stmt, email, password)
+func NewPostgresDB(ctx context.Context, cfg Config) (*DB, error) {
+	opts, err := pg.ParseConfig("")
 	if err != nil {
-		return 0, fmt.Errorf("failed to update last_enter: %w", err)
+		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
 
-	return id, nil
-}
+	opts.User = cfg.Username
+	opts.Password = cfg.Password
+	opts.Host = cfg.HOST
+	opts.Port = cfg.Port
+	opts.Database = cfg.Database
 
-func (p *Postgres) GetUserByEmail(email string) (bool, error) {
-	ctx := context.Background()
-	stmt := `SELECT 1 FROM users WHERE email=$1`
-
-	var one int
-	err := p.Conn.QueryRow(ctx, stmt, email).Scan(&one)
-	if err == nil {
-		return true, nil
-	}
-	if errors.Is(err, pg.ErrNoRows) {
-		return false, nil
-	}
-	return false, fmt.Errorf("get user by login failed: %w", err)
-}
-
-func (p *Postgres) GetUserIDByEmail(email string) (int64, error) {
-	ctx := context.Background()
-	stmt := `SELECT id FROM users WHERE email=$1`
-
-	var id int64
-	err := p.Conn.QueryRow(ctx, stmt, email).Scan(&id)
-	fmt.Println(id)
+	db, err := pg.ConnectConfig(ctx, opts)
 	if err != nil {
-		return 0, fmt.Errorf("get user ID by email failed: %w", err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
-	return id, nil
+	EnsureSchema(ctx, db)
+	EnsureSchemaRecoveryCodes(ctx, db)
+
+	return &DB{Conn: db}, nil
 }
 
-func (p *Postgres) SaveRecoveryCode(userID int64, email string, code string) error {
-	ctx := context.Background()
+func EnsureSchema(ctx context.Context, conn *pg.Conn) error {
 
-	codeHash := security.HashPassword(code)
-	expiredAt := time.Now().Add(10 * time.Minute)
-	fmt.Println("AHUEEEEEET")
-
-	stmt := `
-INSERT INTO password_recovery_codes (user_id, email, code_hash, expired_at)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT (user_id, email)
-DO UPDATE SET
-  code_hash = EXCLUDED.code_hash,
-  expired_at = EXCLUDED.expired_at;
-`
-	if _, err := p.Conn.Exec(ctx, stmt, userID, email, codeHash, expiredAt); err != nil {
-		return fmt.Errorf("failed to save recovery code: %w", err)
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS users (
+	id BIGSERIAL PRIMARY KEY,
+	email TEXT NOT NULL UNIQUE,
+	password TEXT NOT NULL,
+	type TEXT NOT NULL,
+	balance BIGINT NOT NULL DEFAULT 0,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_enter TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`)
+	if err != nil {
+		return fmt.Errorf("ensure schema: %w", err)
 	}
 	return nil
 }
 
-func (p *Postgres) DeleteExpiredRecoveryCodes() error {
-	ctx := context.Background()
-	stmt := `DELETE FROM password_recovery_codes WHERE expired_at <= now();`
-
-	if _, err := p.Conn.Exec(ctx, stmt); err != nil {
-		return fmt.Errorf("failed to delete expired recovery codes: %w", err)
+func EnsureSchemaRecoveryCodes(ctx context.Context, conn *pg.Conn) error {
+	stmts := []string{
+		`
+CREATE TABLE IF NOT EXISTS password_recovery_codes (
+  user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  email      TEXT   NOT NULL,
+  code_hash  TEXT   NOT NULL,
+  expired_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, email)
+);`,
+		`CREATE INDEX IF NOT EXISTS idx_password_recovery_codes_email ON password_recovery_codes (email);`,
+		`CREATE INDEX IF NOT EXISTS idx_password_recovery_codes_expired_at ON password_recovery_codes (expired_at);`,
 	}
-	return nil
-}
 
-func (p *Postgres) VerifyRecoveryCode(email string, code string) (bool, error) {
-	ctx := context.Background()
-	stmt := `SELECT code_hash, expired_at FROM password_recovery_codes WHERE email=$1`
-
-	var codeHash string
-	var expiredAt time.Time
-	err := p.Conn.QueryRow(ctx, stmt, email).Scan(&codeHash, &expiredAt)
-	if err != nil {
-		if errors.Is(err, pg.ErrNoRows) {
-			return false, nil
+	for _, q := range stmts {
+		if _, err := conn.Exec(ctx, q); err != nil {
+			return fmt.Errorf("ensure schema recovery codes: %w", err)
 		}
-		return false, fmt.Errorf("failed to verify recovery code: %w", err)
-	}
-	code = security.HashPassword(code)
-
-	if time.Now().After(expiredAt) {
-		return false, nil
-	}
-
-	if codeHash != code {
-		return false, nil
-	}
-
-	return true, nil
-}
-
-func (p *Postgres) DeleteRecoveryCode(email string) error {
-	ctx := context.Background()
-	stmt := `DELETE FROM password_recovery_codes WHERE email=$1;`
-
-	if _, err := p.Conn.Exec(ctx, stmt, email); err != nil {
-		return fmt.Errorf("failed to delete recovery code: %w", err)
-	}
-	return nil
-}
-
-func (p *Postgres) UpdateUserPassword(userID int64, newPassword string) error {
-	ctx := context.Background()
-	stmt := `UPDATE users SET password=$1 WHERE id=$2;`
-
-	if _, err := p.Conn.Exec(ctx, stmt, newPassword, userID); err != nil {
-		return fmt.Errorf("failed to update user password: %w", err)
 	}
 	return nil
 }

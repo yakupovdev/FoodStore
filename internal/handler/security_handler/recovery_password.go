@@ -5,11 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/model"
+	"github.com/yakupovdev/FoodStore/internal/repository"
 	"github.com/yakupovdev/FoodStore/internal/security"
-	"github.com/yakupovdev/FoodStore/internal/storage"
 )
 
-func ResetPassword(c *gin.Context, pg *storage.Postgres) {
+func ResetPassword(c *gin.Context, pg *repository.Postgres) {
 	var req model.ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})

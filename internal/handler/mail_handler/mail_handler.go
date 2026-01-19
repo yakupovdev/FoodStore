@@ -9,11 +9,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/model"
+	"github.com/yakupovdev/FoodStore/internal/repository"
 	"github.com/yakupovdev/FoodStore/internal/security"
 	"github.com/yakupovdev/FoodStore/internal/storage"
 )
 
-func SendCode(c *gin.Context, pg *storage.Postgres) {
+func SendCode(c *gin.Context, pg *repository.Postgres) {
 	var req model.GmailRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -67,7 +68,7 @@ func GenerateCode() string {
 	return str
 }
 
-func VerifyCode(c *gin.Context, pg *storage.Postgres) {
+func VerifyCode(c *gin.Context, pg *repository.Postgres) {
 	var req model.CodeRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -77,7 +78,7 @@ func VerifyCode(c *gin.Context, pg *storage.Postgres) {
 	userID, err := pg.GetUserIDByEmail(req.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": model.DatabaseConnectionError,
+			"error": storage.ErrDatabaseConnection.Error(),
 		})
 		return
 	}
@@ -85,19 +86,21 @@ func VerifyCode(c *gin.Context, pg *storage.Postgres) {
 	isValidCode, err := pg.VerifyRecoveryCode(req.Email, req.Code)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": model.DatabaseConnectionError,
+			"error": storage.ErrDatabaseConnection.Error(),
 		})
 		return
 	}
 	if !isValidCode {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": model.ErrInvalidRecoveryCode})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": security.ErrInvalidRecoveryCode.Error(),
+		})
 		return
 	}
 
 	token, err := security.GenerateToken(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": model.CouldNotGenerateTokenError,
+			"error": security.ErrTokenGeneration.Error(),
 		})
 		return
 	}
@@ -105,7 +108,7 @@ func VerifyCode(c *gin.Context, pg *storage.Postgres) {
 	err = pg.DeleteExpiredRecoveryCodes()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": model.DatabaseConnectionError,
+			"error": storage.ErrDatabaseConnection.Error(),
 		})
 		return
 	}
