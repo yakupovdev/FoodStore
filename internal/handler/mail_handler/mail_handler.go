@@ -9,9 +9,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/model"
+	"github.com/yakupovdev/FoodStore/internal/postgres"
 	"github.com/yakupovdev/FoodStore/internal/repository"
 	"github.com/yakupovdev/FoodStore/internal/security"
-	"github.com/yakupovdev/FoodStore/internal/storage"
 )
 
 func SendCode(c *gin.Context, pg *repository.Postgres) {
@@ -78,7 +78,7 @@ func VerifyCode(c *gin.Context, pg *repository.Postgres) {
 	userID, err := pg.GetUserIDByEmail(req.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": storage.ErrDatabaseConnection.Error(),
+			"error": postgres.ErrDatabaseConnection.Error(),
 		})
 		return
 	}
@@ -86,7 +86,7 @@ func VerifyCode(c *gin.Context, pg *repository.Postgres) {
 	isValidCode, err := pg.VerifyRecoveryCode(req.Email, req.Code)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": storage.ErrDatabaseConnection.Error(),
+			"error": postgres.ErrDatabaseConnection.Error(),
 		})
 		return
 	}
@@ -108,7 +108,7 @@ func VerifyCode(c *gin.Context, pg *repository.Postgres) {
 	err = pg.DeleteExpiredRecoveryCodes()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": storage.ErrDatabaseConnection.Error(),
+			"error": postgres.ErrDatabaseConnection.Error(),
 		})
 		return
 	}

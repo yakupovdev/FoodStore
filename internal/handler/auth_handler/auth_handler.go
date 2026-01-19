@@ -6,10 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/model"
+	"github.com/yakupovdev/FoodStore/internal/postgres"
 	"github.com/yakupovdev/FoodStore/internal/repository"
 	"github.com/yakupovdev/FoodStore/internal/security"
 	"github.com/yakupovdev/FoodStore/internal/service"
-	"github.com/yakupovdev/FoodStore/internal/storage"
 )
 
 func RegisterHandlers(c *gin.Context, pg *repository.Postgres) {
@@ -38,7 +38,7 @@ func RegisterHandlers(c *gin.Context, pg *repository.Postgres) {
 		return
 	}
 
-	_, err = pg.CreateUser(req.Email, hashHex, req.Type, req.Balance)
+	_, err = pg.RegisterUser(req.Email, hashHex, req.Type, req.Balance)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -58,7 +58,7 @@ func LoginHandlers(c *gin.Context, pg *repository.Postgres) {
 	hashHex := security.HashPassword(req.Password)
 	if pg == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": storage.ErrDatabaseConnection.Error(),
+			"error": postgres.ErrDatabaseConnection.Error(),
 		})
 		return
 	}
