@@ -13,13 +13,26 @@ type User struct {
 }
 
 type UserData struct {
-	Login    string  `json:"login"`
+	Email    string  `json:"email"`
 	Password string  `json:"password"`
 	Type     string  `json:"type"`
 	Balance  float64 `json:"balance"`
 }
 
 type AuthRequest struct {
-	Login    string `json:"login"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type GmailRequest struct {
+	Email string `json:"email"`
+}
+
+type CodeRequest struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+type ResetPasswordRequest struct {
+	NewPassword string `json:"new_password"`
 }

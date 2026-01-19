@@ -8,4 +8,5 @@ const (
 	DatabaseQueryError          = "database query error"
 	DatabaseNotInitializedError = "database not initialized"
 	CouldNotGenerateTokenError  = "could not generate token"
+	ErrInvalidRecoveryCode      = "invalid recovery code"
 )

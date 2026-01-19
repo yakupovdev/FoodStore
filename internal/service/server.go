@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yakupovdev/FoodStore/internal/handler"
+	"github.com/yakupovdev/FoodStore/internal/handler/auth_handler"
+	"github.com/yakupovdev/FoodStore/internal/handler/mail_handler"
+	"github.com/yakupovdev/FoodStore/internal/handler/security_handler"
 	"github.com/yakupovdev/FoodStore/internal/storage"
 )
 
@@ -20,11 +22,11 @@ func SetupRouter(pg *storage.Postgres) *gin.Engine {
 	auth := router.Group("/auth")
 	{
 		auth.POST("/register", func(c *gin.Context) {
-			handler.RegisterHandlers(c, pg)
+			auth_handler.RegisterHandlers(c, pg)
 		})
 
 		auth.POST("/login", func(c *gin.Context) {
-			handler.LoginHandlers(c, pg)
+			auth_handler.LoginHandlers(c, pg)
 		})
 
 	}
@@ -42,6 +44,23 @@ func SetupRouter(pg *storage.Postgres) *gin.Engine {
 				"user_id": userID,
 				"message": "This is a protected profile route",
 			})
+		})
+	}
+	recovery := router.Group("/recovery")
+	{
+		recovery.POST("/send-code", func(c *gin.Context) {
+			mail_handler.SendCode(c, pg)
+		})
+		recovery.POST("/verify-code", func(c *gin.Context) {
+			mail_handler.VerifyCode(c, pg)
+
+		})
+	}
+	recovery_password := router.Group("/recovery-password")
+	recovery_password.Use(AuthMiddleware())
+	{
+		recovery_password.POST("/reset", func(c *gin.Context) {
+			security_handler.ResetPassword(c, pg)
 		})
 	}
 

@@ -1,4 +1,4 @@
-package handler
+package auth_handler
 
 import (
 	"log"
@@ -23,7 +23,7 @@ func RegisterHandlers(c *gin.Context, pg *storage.Postgres) {
 		return
 	}
 	log.Println("vatahell")
-	exist, err := pg.GetUserByLogin(req.Login)
+	exist, err := pg.GetUserByEmail(req.Email)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -34,7 +34,7 @@ func RegisterHandlers(c *gin.Context, pg *storage.Postgres) {
 		return
 	}
 
-	_, err = pg.CreateUser(req.Login, hashHex, req.Type, req.Balance)
+	_, err = pg.CreateUser(req.Email, hashHex, req.Type, req.Balance)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -50,13 +50,14 @@ func LoginHandlers(c *gin.Context, pg *storage.Postgres) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	hashHex := security.HashPassword(req.Password)
 	if pg == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": model.DatabaseConnectionError})
 		return
 	}
 	log.Println(hashHex)
-	userID, err := pg.LoginUser(req.Login, hashHex)
+	userID, err := pg.LoginUser(req.Email, hashHex)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": model.ErrInvalidCredentials})
 		return
