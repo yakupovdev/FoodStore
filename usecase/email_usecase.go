@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"net/smtp"
 
 	"github.com/yakupovdev/FoodStore/internal/repository"
@@ -22,6 +23,16 @@ func NewEmailUsecase(repo *repository.Postgres) (*EmailUsecase, error) {
 }
 
 func (eu *EmailUsecase) SendCodeByEmail(emailTo string) error {
+	userID, err := eu.repo.GetUserIDByEmail(emailTo)
+
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return repository.ErrUserNotFound
+		} else {
+			return ErrInternalServer
+		}
+	}
+
 	code := security.GenerateAccessCodeByEmail()
 
 	auth := smtp.PlainAuth(
@@ -41,7 +52,7 @@ func (eu *EmailUsecase) SendCodeByEmail(emailTo string) error {
 			"Here your code: " + code + "\n",
 	)
 
-	err := smtp.SendMail(
+	err = smtp.SendMail(
 		"smtp.gmail.com:587",
 		auth,
 		"foodstorewwgo@gmail.com",
@@ -50,19 +61,13 @@ func (eu *EmailUsecase) SendCodeByEmail(emailTo string) error {
 	)
 
 	if err != nil {
-		return err
-	}
-
-	userID, err := eu.repo.GetUserIDByEmail(emailTo)
-
-	if err != nil {
-		return err
+		return ErrSMTPFailed
 	}
 
 	err = eu.repo.SaveRecoveryCode(userID, emailTo, code)
 
 	if err != nil {
-		return err
+		return ErrInternalServer
 	}
 
 	return nil
@@ -72,7 +77,11 @@ func (eu *EmailUsecase) VerifyCode(email, code string) (string, error) {
 	userID, err := eu.repo.GetUserIDByEmail(email)
 
 	if err != nil {
-		return "", ErrUserNotFound
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return "", repository.ErrUserNotFound
+		} else {
+			return "", ErrInternalServer
+		}
 	}
 
 	isValidCode, err := eu.repo.VerifyRecoveryCode(email, code)

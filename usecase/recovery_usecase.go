@@ -19,7 +19,7 @@ func NewRecoveryUsecase(repo *repository.Postgres) (*RecoveryUsecase, error) {
 	}, nil
 }
 
-func (ru *RecoveryUsecase) ResetPassword(userID int64, newPassword string) error {
+func (ru *RecoveryUsecase) ResetUserPassword(userID int64, newPassword string) error {
 	hashHex := security.HashPassword(newPassword)
 	err := ru.repo.UpdateUserPassword(userID, hashHex)
 

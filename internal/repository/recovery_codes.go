@@ -25,7 +25,7 @@ DO UPDATE SET
   expired_at = EXCLUDED.expired_at;
 `
 	if _, err := p.Conn.Exec(ctx, stmt, userID, email, codeHash, expiredAt); err != nil {
-		return fmt.Errorf("failed to save recovery code: %w", err)
+		return ErrSaveRecoveryCode
 	}
 	return nil
 }

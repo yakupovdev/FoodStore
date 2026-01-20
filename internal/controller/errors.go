@@ -8,9 +8,12 @@ type HTTPError struct {
 }
 
 var (
-	ErrInvalidJSON        = HTTPError{Status: 400, Response: model.ErrorResponse{Error: "invalid request body"}}
-	ErrEmptyFields        = HTTPError{Status: 400, Response: model.ErrorResponse{Error: "email and password are required"}}
-	ErrInvalidCredentials = HTTPError{Status: 401, Response: model.ErrorResponse{Error: "invalid email or password"}}
-	ErrUserExists         = HTTPError{Status: 409, Response: model.ErrorResponse{Error: "user already exists"}}
-	ErrInternal           = HTTPError{Status: 500, Response: model.ErrorResponse{Error: "internal server error"}}
+	ErrInvalidJSON          = HTTPError{Status: 400, Response: model.ErrorResponse{Error: "invalid request body"}}
+	ErrEmptyFields          = HTTPError{Status: 400, Response: model.ErrorResponse{Error: "some fields are missing"}}
+	ErrInvalidCredentials   = HTTPError{Status: 401, Response: model.ErrorResponse{Error: "invalid email or password"}}
+	ErrUserExists           = HTTPError{Status: 409, Response: model.ErrorResponse{Error: "user already exists"}}
+	ErrInternal             = HTTPError{Status: 500, Response: model.ErrorResponse{Error: "internal server error"}}
+	ErrUserNotFound         = HTTPError{Status: 404, Response: model.ErrorResponse{Error: "user not found"}}
+	ErrVerifyCodeIsNotValid = HTTPError{Status: 400, Response: model.ErrorResponse{Error: "verify code is not valid"}}
+	ErrInvalidToken         = HTTPError{Status: 401, Response: model.ErrorResponse{Error: "invalid token"}}
 )

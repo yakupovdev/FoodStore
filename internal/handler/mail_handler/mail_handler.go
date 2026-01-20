@@ -13,7 +13,7 @@ import (
 )
 
 func SendCode(c *gin.Context, pg *repository.Postgres) {
-	var req model.EmailRequest
+	var req model.VerifyEmailRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -61,7 +61,7 @@ func SendCode(c *gin.Context, pg *repository.Postgres) {
 }
 
 func VerifyCode(c *gin.Context, pg *repository.Postgres) {
-	var req model.CodeRequest
+	var req model.VerifyCodeRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

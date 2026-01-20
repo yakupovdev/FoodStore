@@ -57,9 +57,12 @@ func (p *Postgres) GetUserIDByEmail(email string) (int64, error) {
 
 	var userID int64
 	err := p.Conn.QueryRow(ctx, stmt, email).Scan(&userID)
-	fmt.Println(userID)
 	if err != nil {
-		return 0, fmt.Errorf("get user ID by email failed: %w", err)
+		if errors.Is(err, pg.ErrNoRows) {
+			return 0, ErrUserNotFound
+		} else {
+			return 0, ErrQueryRow
+		}
 	}
 	return userID, nil
 }
@@ -69,7 +72,7 @@ func (p *Postgres) UpdateUserPassword(userID int64, newPassword string) error {
 	stmt := `UPDATE users SET password=$1 WHERE userID=$2;`
 
 	if _, err := p.Conn.Exec(ctx, stmt, newPassword, userID); err != nil {
-		return fmt.Errorf("failed to update user password: %w", err)
+		return ErrUpdatePassword
 	}
 	return nil
 }

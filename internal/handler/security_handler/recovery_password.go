@@ -10,7 +10,7 @@ import (
 )
 
 func ResetPassword(c *gin.Context, pg *repository.Postgres) {
-	var req model.ResetPasswordRequest
+	var req model.ResetUserPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
