@@ -15,11 +15,10 @@ func (p *Postgres) SaveRecoveryCode(userID int64, email string, code string) err
 
 	codeHash := security.HashPassword(code)
 	expiredAt := time.Now().Add(10 * time.Minute)
-
 	stmt := `
 INSERT INTO password_recovery_codes (userid, email, code_hash, expired_at)
 VALUES ($1, $2, $3, $4)
-ON CONFLICT (userID, email)
+ON CONFLICT (userid, email)
 DO UPDATE SET
   code_hash = EXCLUDED.code_hash,
   expired_at = EXCLUDED.expired_at;
