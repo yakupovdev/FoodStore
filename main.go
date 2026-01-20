@@ -3,18 +3,24 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/yakupovdev/FoodStore/internal/app"
+	"github.com/yakupovdev/FoodStore/internal/controller"
 	"github.com/yakupovdev/FoodStore/internal/repository"
-	"github.com/yakupovdev/FoodStore/internal/service"
+	"github.com/yakupovdev/FoodStore/internal/router"
 	"github.com/yakupovdev/FoodStore/internal/storage"
+	"github.com/yakupovdev/FoodStore/usecase"
 )
 
 func main() {
+	// DB
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -23,9 +29,7 @@ func main() {
 	Host := os.Getenv("HOST")
 	PortBefore := os.Getenv("PORT")
 	Port, _ := strconv.ParseUint(PortBefore, 10, 16)
-
 	Username := os.Getenv("USER")
-
 	Password := os.Getenv("PASSWORD")
 
 	ctx := context.Background()
@@ -47,14 +51,56 @@ func main() {
 
 	defer conn.Close(ctx)
 
-	pgStorage := repository.NewPostgres(conn)
+	// Repository
+	repo := repository.NewPostgres(conn)
 
-	srv := service.NewServer(":9000", service.SetupRouter(pgStorage))
-	application := app.NewApp(srv)
+	// Usecases
+	authUsecase, _ := usecase.NewAuthUsecase(repo)
+	emailUsecase, _ := usecase.NewEmailUsecase(repo)
+	recoveryUsecase, _ := usecase.NewRecoveryUsecase(repo)
 
-	log.Println("Starting server on :9000")
-	if err := application.Server.Run(); err != nil {
-		panic(err)
+	// Controllers
+	authController := controller.NewAuthController(authUsecase)
+	emailController := controller.NewEmailController(emailUsecase)
+	recoveryController := controller.NewRecoveryController(recoveryUsecase)
+
+	// Router
+	r := router.SetupRouter(router.Deps{
+		AuthController:     authController,
+		EmailController:    emailController,
+		RecoveryController: recoveryController,
+	})
+
+	// HTTP Server
+	srv := &http.Server{
+		Addr:         ":9000",
+		Handler:      r,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
+	// Run Server
+	go func() {
+		log.Println("Starting server on :9000")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	// GRACEFUL SHUTDOWN
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("server shutdown failed: %v", err)
+	}
+
+	log.Println("server stopped gracefully")
 }

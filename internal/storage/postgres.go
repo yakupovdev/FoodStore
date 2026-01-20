@@ -48,7 +48,7 @@ func InitSchema(ctx context.Context, conn *pg.Conn) error {
 func ensureUsersSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS users (
-	userID BIGSERIAL PRIMARY KEY,
+	userid BIGSERIAL PRIMARY KEY,
 	email TEXT NOT NULL UNIQUE,
 	password_hash TEXT NOT NULL,
 	type TEXT NOT NULL,
@@ -67,7 +67,7 @@ func ensureRecoveryCodesSchema(ctx context.Context, conn *pg.Conn) error {
 	stmts := []string{
 		`
 CREATE TABLE IF NOT EXISTS password_recovery_codes (
-	userID BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
+	userid BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
 	email TEXT NOT NULL,
 	code_hash TEXT NOT NULL,
 	expired_at TIMESTAMPTZ NOT NULL,
