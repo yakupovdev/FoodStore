@@ -13,7 +13,7 @@ import (
 )
 
 func SendCode(c *gin.Context, pg *repository.Postgres) {
-	var req model.GmailRequest
+	var req model.EmailRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
