@@ -17,6 +17,8 @@ type Deps struct {
 func SetupRouter(d Deps) *gin.Engine {
 	router := gin.New()
 
+	router.Use(middleware.Logger())
+
 	auth := router.Group("/auth")
 	{
 		auth.POST("/register", d.AuthController.RegisterUser)
