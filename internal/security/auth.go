@@ -4,7 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"math/rand"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -60,4 +62,10 @@ func ParseToken(tokenStr string) (*Claims, error) {
 	}
 
 	return claims, nil
+}
+
+func GenerateAccessCodeByEmail() string {
+	number := rand.Intn(900000) + 100000
+	str := strconv.Itoa(number)
+	return str
 }

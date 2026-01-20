@@ -9,9 +9,9 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/yakupovdev/FoodStore/internal/app"
-	"github.com/yakupovdev/FoodStore/internal/postgres"
 	"github.com/yakupovdev/FoodStore/internal/repository"
 	"github.com/yakupovdev/FoodStore/internal/service"
+	"github.com/yakupovdev/FoodStore/internal/storage"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 
 	ctx := context.Background()
 
-	conn, err := postgres.NewPostgresDB(ctx, postgres.Config{
+	conn, err := storage.NewPostgresDB(ctx, storage.Config{
 		Database: Database,
 		Host:     Host,
 		Port:     uint16(Port),
@@ -41,7 +41,7 @@ func main() {
 		panic(err)
 	}
 
-	if err := postgres.InitSchema(ctx, conn); err != nil {
+	if err := storage.InitSchema(ctx, conn); err != nil {
 		panic(err)
 	}
 

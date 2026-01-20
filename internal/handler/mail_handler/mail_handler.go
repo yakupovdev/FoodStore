@@ -2,16 +2,14 @@ package mail_handler
 
 import (
 	"fmt"
-	"math/rand"
 	"net/http"
 	"net/smtp"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/model"
-	"github.com/yakupovdev/FoodStore/internal/postgres"
 	"github.com/yakupovdev/FoodStore/internal/repository"
 	"github.com/yakupovdev/FoodStore/internal/security"
+	"github.com/yakupovdev/FoodStore/internal/storage"
 )
 
 func SendCode(c *gin.Context, pg *repository.Postgres) {
@@ -22,7 +20,7 @@ func SendCode(c *gin.Context, pg *repository.Postgres) {
 		return
 	}
 
-	code := GenerateCode()
+	code := security.GenerateAccessCodeByEmail()
 	to := req.Email
 	auth := smtp.PlainAuth(
 		"",
@@ -33,10 +31,10 @@ func SendCode(c *gin.Context, pg *repository.Postgres) {
 
 	msg := []byte(
 		"From: FoodStore <foodstorewwgo@gmail.com>\r\n" +
-			"To: ygolodcom@gmail.com\r\n" +
+			"To:" + to + "\r\n" +
 			"Subject: Test Email from FoodStore\r\n" +
 			"MIME-Version: 1.0\r\n" +
-			"Content-Type: text/plain; charset=\"UTF-8\"\r\n" +
+			"Content-UserType: text/plain; charset=\"UTF-8\"\r\n" +
 			"\r\n" +
 			"Here your code: " + code + "\n",
 	)
@@ -62,12 +60,6 @@ func SendCode(c *gin.Context, pg *repository.Postgres) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-func GenerateCode() string {
-	number := rand.Intn(900000) + 100000
-	str := strconv.Itoa(number)
-	return str
-}
-
 func VerifyCode(c *gin.Context, pg *repository.Postgres) {
 	var req model.CodeRequest
 
@@ -78,7 +70,7 @@ func VerifyCode(c *gin.Context, pg *repository.Postgres) {
 	userID, err := pg.GetUserIDByEmail(req.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": postgres.ErrDatabaseConnection.Error(),
+			"error": storage.ErrDatabaseConnection.Error(),
 		})
 		return
 	}
@@ -86,7 +78,7 @@ func VerifyCode(c *gin.Context, pg *repository.Postgres) {
 	isValidCode, err := pg.VerifyRecoveryCode(req.Email, req.Code)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": postgres.ErrDatabaseConnection.Error(),
+			"error": storage.ErrDatabaseConnection.Error(),
 		})
 		return
 	}
@@ -108,7 +100,7 @@ func VerifyCode(c *gin.Context, pg *repository.Postgres) {
 	err = pg.DeleteExpiredRecoveryCodes()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": postgres.ErrDatabaseConnection.Error(),
+			"error": storage.ErrDatabaseConnection.Error(),
 		})
 		return
 	}

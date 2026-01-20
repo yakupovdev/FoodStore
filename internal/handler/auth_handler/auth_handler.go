@@ -1,19 +1,18 @@
 package auth_handler
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/model"
-	"github.com/yakupovdev/FoodStore/internal/postgres"
 	"github.com/yakupovdev/FoodStore/internal/repository"
 	"github.com/yakupovdev/FoodStore/internal/security"
 	"github.com/yakupovdev/FoodStore/internal/service"
+	"github.com/yakupovdev/FoodStore/internal/storage"
 )
 
 func RegisterHandlers(c *gin.Context, pg *repository.Postgres) {
-	var req model.UserData
+	var req model.RegisterRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -24,7 +23,6 @@ func RegisterHandlers(c *gin.Context, pg *repository.Postgres) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database not initialized"})
 		return
 	}
-	log.Println("vatahell")
 	exist, err := pg.GetUserByEmail(req.Email)
 
 	if err != nil {
@@ -38,7 +36,7 @@ func RegisterHandlers(c *gin.Context, pg *repository.Postgres) {
 		return
 	}
 
-	_, err = pg.RegisterUser(req.Email, hashHex, req.Type, req.Balance)
+	_, err = pg.RegisterUser(req.Email, hashHex, req.UserType, req.Balance)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -48,7 +46,7 @@ func RegisterHandlers(c *gin.Context, pg *repository.Postgres) {
 }
 
 func LoginHandlers(c *gin.Context, pg *repository.Postgres) {
-	var req model.AuthRequest
+	var req model.LoginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -58,11 +56,10 @@ func LoginHandlers(c *gin.Context, pg *repository.Postgres) {
 	hashHex := security.HashPassword(req.Password)
 	if pg == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": postgres.ErrDatabaseConnection.Error(),
+			"error": storage.ErrDatabaseConnection.Error(),
 		})
 		return
 	}
-	log.Println(hashHex)
 	userID, err := pg.LoginUser(req.Email, hashHex)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -71,7 +68,7 @@ func LoginHandlers(c *gin.Context, pg *repository.Postgres) {
 		return
 	}
 
-	token, err := security.GenerateToken(int64(userID))
+	token, err := security.GenerateToken(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": security.ErrTokenGeneration.Error(),
