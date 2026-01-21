@@ -3,7 +3,6 @@ package security
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"math/rand"
 	"os"
 	"strconv"
@@ -47,7 +46,7 @@ func ParseToken(tokenStr string) (*Claims, error) {
 		claims,
 		func(t *jwt.Token) (any, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("unexpected signing method")
+				return nil, ErrUnexpectedSigningMethod
 			}
 			return jwtSecret, nil
 		},

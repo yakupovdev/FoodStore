@@ -17,7 +17,7 @@ type Deps struct {
 func SetupRouter(d Deps) *gin.Engine {
 	router := gin.New()
 
-	router.Use(middleware.Logger())
+	router.Use(middleware.LoggerMiddleware())
 
 	auth := router.Group("/auth")
 	{

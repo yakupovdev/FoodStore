@@ -29,7 +29,7 @@ func NewPostgresDB(ctx context.Context, cfg Config) (*pg.Conn, error) {
 
 	conn, err := pg.ConnectConfig(ctx, opts)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, ErrDatabaseConnection
 	}
 
 	return conn, nil
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 `)
 	if err != nil {
-		return fmt.Errorf("ensure users schema: %w", err)
+		return ErrUsersSchema
 	}
 	return nil
 }
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS password_recovery_codes (
 
 	for _, stmt := range stmts {
 		if _, err := conn.Exec(ctx, stmt); err != nil {
-			return fmt.Errorf("ensure recovery codes schema: %w", err)
+			return ErrRecoveryCodesSchema
 		}
 	}
 
