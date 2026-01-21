@@ -18,8 +18,8 @@ type VerifyEmailResponse struct {
 }
 
 type VerifyCodeResponse struct {
-	Token   string `json:"token"`
-	Message string `json:"message"`
+	RecoveryToken string `json:"recovery_token"`
+	Message       string `json:"message"`
 }
 
 type ResetUserPasswordResponse struct {

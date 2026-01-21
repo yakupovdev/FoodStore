@@ -5,19 +5,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/controller"
-	middleware2 "github.com/yakupovdev/FoodStore/internal/middleware"
+	"github.com/yakupovdev/FoodStore/internal/middleware"
+	"github.com/yakupovdev/FoodStore/internal/security"
+	"github.com/yakupovdev/FoodStore/internal/usecase"
 )
 
 type Deps struct {
-	AuthController     *controller.AuthController
-	EmailController    *controller.EmailController
-	RecoveryController *controller.RecoveryController
+	AuthController               *controller.AuthController
+	EmailController              *controller.EmailController
+	RecoveryController           *controller.RecoveryController
+	RefreshAccessTokenController *controller.RefreshAccessTokenController
+	CheckTokenIsValidUsecase     *usecase.CheckTokenIsValidUsecase
 }
 
 func SetupRouter(d Deps) *gin.Engine {
-	router := gin.New()
-
-	router.Use(middleware2.LoggerMiddleware())
+	router := gin.Default()
 
 	auth := router.Group("/auth")
 	{
@@ -27,7 +29,7 @@ func SetupRouter(d Deps) *gin.Engine {
 
 	}
 	protected := router.Group("/protected")
-	protected.Use(middleware2.AuthMiddleware())
+	protected.Use(middleware.AuthMiddleware(d.CheckTokenIsValidUsecase, security.AccessToken))
 	{
 		protected.GET("/profile", func(c *gin.Context) {
 			userID, exists := c.Get("user_id")
@@ -48,9 +50,15 @@ func SetupRouter(d Deps) *gin.Engine {
 		recovery.POST("/verify-code", d.EmailController.VerifyCode)
 	}
 	recovery_password := router.Group("/recovery-password")
-	recovery_password.Use(middleware2.AuthMiddleware())
+	recovery_password.Use(middleware.AuthMiddleware(d.CheckTokenIsValidUsecase, security.RecoveryToken))
 	{
 		recovery_password.POST("/reset", d.RecoveryController.ResetUserPassword)
+	}
+
+	refreshAccess := router.Group("/refresh-access")
+	refreshAccess.Use(middleware.AuthMiddleware(d.CheckTokenIsValidUsecase, security.RefreshToken))
+	{
+		refreshAccess.POST("/token", d.RefreshAccessTokenController.RefreshAccessToken)
 	}
 
 	return router

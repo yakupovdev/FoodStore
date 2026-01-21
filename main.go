@@ -16,14 +16,14 @@ import (
 	"github.com/yakupovdev/FoodStore/internal/repository"
 	"github.com/yakupovdev/FoodStore/internal/router"
 	"github.com/yakupovdev/FoodStore/internal/storage"
-	usecase2 "github.com/yakupovdev/FoodStore/internal/usecase"
+	"github.com/yakupovdev/FoodStore/internal/usecase"
 )
 
 func main() {
 	// DB
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatal("Error loading ..env file")
 	}
 	Database := os.Getenv("DATABASE")
 	Host := os.Getenv("HOST")
@@ -55,20 +55,25 @@ func main() {
 	repo := repository.NewPostgres(conn)
 
 	// Usecases
-	authUsecase, _ := usecase2.NewAuthUsecase(repo)
-	emailUsecase, _ := usecase2.NewEmailUsecase(repo)
-	recoveryUsecase, _ := usecase2.NewRecoveryUsecase(repo)
+	authUsecase, _ := usecase.NewAuthUsecase(repo)
+	emailUsecase, _ := usecase.NewEmailUsecase(repo)
+	recoveryUsecase, _ := usecase.NewRecoveryUsecase(repo)
+	refreshAccessTokenUsecase, _ := usecase.NewRefreshAccessTokenUsecase(repo)
+	chechTokenIsValidUsecase, _ := usecase.NewCheckTokenIsValidUsecase(repo)
 
 	// Controllers
 	authController := controller.NewAuthController(authUsecase)
 	emailController := controller.NewEmailController(emailUsecase)
 	recoveryController := controller.NewRecoveryController(recoveryUsecase)
+	refreshAccessTokenController := controller.NewRefreshAccessTokenController(refreshAccessTokenUsecase)
 
 	// Router
 	r := router.SetupRouter(router.Deps{
-		AuthController:     authController,
-		EmailController:    emailController,
-		RecoveryController: recoveryController,
+		AuthController:               authController,
+		EmailController:              emailController,
+		RecoveryController:           recoveryController,
+		RefreshAccessTokenController: refreshAccessTokenController,
+		CheckTokenIsValidUsecase:     chechTokenIsValidUsecase,
 	})
 
 	// HTTP Server

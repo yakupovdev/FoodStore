@@ -3,16 +3,17 @@ package storage
 import (
 	"context"
 	"fmt"
+	"log"
 
 	pg "github.com/jackc/pgx/v5"
 )
 
 type Config struct {
-	Database string `env:"POSTGRES_DB"`
-	Host     string `env:"POSTGRES_URI"`
-	Port     uint16 `env:"POSTGRESQL_PORT"`
-	Username string `env:"POSTGRESQL_USERNAME"`
-	Password string `env:"POSTGRESQL_PASSWORD"`
+	Database string `.env:"POSTGRES_DB"`
+	Host     string `.env:"POSTGRES_URI"`
+	Port     uint16 `.env:"POSTGRESQL_PORT"`
+	Username string `.env:"POSTGRESQL_USERNAME"`
+	Password string `.env:"POSTGRESQL_PASSWORD"`
 }
 
 func NewPostgresDB(ctx context.Context, cfg Config) (*pg.Conn, error) {
@@ -40,6 +41,12 @@ func InitSchema(ctx context.Context, conn *pg.Conn) error {
 		return err
 	}
 	if err := ensureRecoveryCodesSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureWhitelistSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureBlacklistSchema(ctx, conn); err != nil {
 		return err
 	}
 	return nil
@@ -84,5 +91,38 @@ CREATE TABLE IF NOT EXISTS password_recovery_codes (
 		}
 	}
 
+	return nil
+}
+
+func ensureWhitelistSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS token_whitelist (
+	userid BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
+	access_token_hash TEXT NOT NULL,
+    expired_at TIMESTAMPTZ NOT NULL,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+	PRIMARY KEY (userID, access_token_hash)
+);
+`)
+	if err != nil {
+		log.Println(err)
+		return ErrWhitelistSchema
+	}
+	return nil
+}
+
+func ensureBlacklistSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS token_blacklist (
+    	userid BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
+    	access_token_hash TEXT NOT NULL,
+    expired_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (userID, access_token_hash)
+    );
+`)
+	if err != nil {
+		log.Println(err)
+		return ErrBlacklistSchema
+	}
 	return nil
 }

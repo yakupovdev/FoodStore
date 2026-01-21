@@ -9,4 +9,5 @@ var (
 	ErrQueryRow         = errors.New("query row error")
 	ErrSaveRecoveryCode = errors.New("save recovery code error")
 	ErrUpdatePassword   = errors.New("update password error")
+	ErrSaveAccessToken  = errors.New("save access token error")
 )

@@ -7,14 +7,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/model"
 	"github.com/yakupovdev/FoodStore/internal/repository"
-	usecase2 "github.com/yakupovdev/FoodStore/internal/usecase"
+	"github.com/yakupovdev/FoodStore/internal/usecase"
 )
 
 type EmailController struct {
-	eu *usecase2.EmailUsecase
+	eu *usecase.EmailUsecase
 }
 
-func NewEmailController(eu *usecase2.EmailUsecase) *EmailController {
+func NewEmailController(eu *usecase.EmailUsecase) *EmailController {
 	return &EmailController{eu: eu}
 }
 
@@ -61,12 +61,12 @@ func (ec *EmailController) VerifyCode(ctx *gin.Context) {
 		return
 	}
 
-	token, err := ec.eu.VerifyCode(req.Email, req.Code)
+	recoveryToken, err := ec.eu.VerifyCode(req.Email, req.Code)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
 			ctx.JSON(ErrUserNotFound.Status, ErrUserNotFound.Response)
-		case errors.Is(err, usecase2.ErrCodeIsNotValid):
+		case errors.Is(err, usecase.ErrCodeIsNotValid):
 			ctx.JSON(ErrVerifyCodeIsNotValid.Status, ErrVerifyCodeIsNotValid.Response)
 		default:
 			ctx.JSON(ErrInternal.Status, ErrInternal.Response)
@@ -74,5 +74,5 @@ func (ec *EmailController) VerifyCode(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.VerifyCodeResponse{Token: token, Message: "Code verified successfully"})
+	ctx.JSON(http.StatusOK, model.VerifyCodeResponse{RecoveryToken: recoveryToken, Message: "Code verified successfully"})
 }

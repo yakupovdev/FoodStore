@@ -12,4 +12,6 @@ var (
 	ErrVerificationFailed = errors.New("verification failed")
 	ErrInternalServer     = errors.New("internal server error")
 	ErrSMTPFailed         = errors.New("failed to send email via SMTP")
+	ErrTokenStorage       = errors.New("failed to store token")
+	ErrTokenCleanup       = errors.New("failed to clean up tokens")
 )

@@ -93,7 +93,7 @@ func (eu *EmailUsecase) VerifyCode(email, code string) (string, error) {
 		return "", ErrCodeIsNotValid
 	}
 
-	token, err := security.GenerateToken(userID)
+	recoveryToken, err := security.GenerateToken(userID, security.RecoveryToken)
 
 	if err != nil {
 		return "", ErrTokenGeneration
@@ -101,5 +101,5 @@ func (eu *EmailUsecase) VerifyCode(email, code string) (string, error) {
 
 	_ = eu.repo.DeleteRecoveryCode(email)
 
-	return token, nil
+	return recoveryToken, nil
 }

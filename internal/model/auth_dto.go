@@ -13,9 +13,14 @@ type RegisterRequest struct {
 }
 
 type LoginResponse struct {
-	Token string `json:"token"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 type RegisterResponse struct {
 	Message string `json:"message"`
+}
+
+type RefreshAccessTokenResponse struct {
+	AccessToken string `json:"access_token"`
 }
