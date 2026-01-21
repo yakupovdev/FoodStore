@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/model"
-	"github.com/yakupovdev/FoodStore/usecase"
+	"github.com/yakupovdev/FoodStore/internal/usecase"
 )
 
 type RecoveryController struct {

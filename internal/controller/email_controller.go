@@ -7,14 +7,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/model"
 	"github.com/yakupovdev/FoodStore/internal/repository"
-	"github.com/yakupovdev/FoodStore/usecase"
+	usecase2 "github.com/yakupovdev/FoodStore/internal/usecase"
 )
 
 type EmailController struct {
-	eu *usecase.EmailUsecase
+	eu *usecase2.EmailUsecase
 }
 
-func NewEmailController(eu *usecase.EmailUsecase) *EmailController {
+func NewEmailController(eu *usecase2.EmailUsecase) *EmailController {
 	return &EmailController{eu: eu}
 }
 
@@ -66,7 +66,7 @@ func (ec *EmailController) VerifyCode(ctx *gin.Context) {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
 			ctx.JSON(ErrUserNotFound.Status, ErrUserNotFound.Response)
-		case errors.Is(err, usecase.ErrCodeIsNotValid):
+		case errors.Is(err, usecase2.ErrCodeIsNotValid):
 			ctx.JSON(ErrVerifyCodeIsNotValid.Status, ErrVerifyCodeIsNotValid.Response)
 		default:
 			ctx.JSON(ErrInternal.Status, ErrInternal.Response)

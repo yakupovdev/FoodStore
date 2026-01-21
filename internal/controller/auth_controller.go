@@ -6,14 +6,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/model"
-	"github.com/yakupovdev/FoodStore/usecase"
+	usecase2 "github.com/yakupovdev/FoodStore/internal/usecase"
 )
 
 type AuthController struct {
-	uc *usecase.AuthUsecase
+	uc *usecase2.AuthUsecase
 }
 
-func NewAuthController(uc *usecase.AuthUsecase) *AuthController {
+func NewAuthController(uc *usecase2.AuthUsecase) *AuthController {
 	return &AuthController{uc: uc}
 }
 
@@ -36,7 +36,7 @@ func (ac *AuthController) RegisterUser(ctx *gin.Context) {
 
 	if err != nil {
 		switch {
-		case errors.Is(err, usecase.ErrDuplicateEmail):
+		case errors.Is(err, usecase2.ErrDuplicateEmail):
 			ctx.JSON(ErrUserExists.Status, ErrUserExists.Response)
 		default:
 			ctx.JSON(ErrInternal.Status, ErrInternal.Response)
@@ -66,7 +66,7 @@ func (ac *AuthController) LoginUser(ctx *gin.Context) {
 
 	if err != nil {
 		switch {
-		case errors.Is(err, usecase.ErrInvalidCredentials):
+		case errors.Is(err, usecase2.ErrInvalidCredentials):
 			ctx.JSON(ErrInvalidCredentials.Status, ErrInvalidCredentials.Response)
 		default:
 			ctx.JSON(ErrInternal.Status, ErrInternal.Response)

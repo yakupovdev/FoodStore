@@ -16,7 +16,7 @@ import (
 	"github.com/yakupovdev/FoodStore/internal/repository"
 	"github.com/yakupovdev/FoodStore/internal/router"
 	"github.com/yakupovdev/FoodStore/internal/storage"
-	"github.com/yakupovdev/FoodStore/usecase"
+	usecase2 "github.com/yakupovdev/FoodStore/internal/usecase"
 )
 
 func main() {
@@ -55,9 +55,9 @@ func main() {
 	repo := repository.NewPostgres(conn)
 
 	// Usecases
-	authUsecase, _ := usecase.NewAuthUsecase(repo)
-	emailUsecase, _ := usecase.NewEmailUsecase(repo)
-	recoveryUsecase, _ := usecase.NewRecoveryUsecase(repo)
+	authUsecase, _ := usecase2.NewAuthUsecase(repo)
+	emailUsecase, _ := usecase2.NewEmailUsecase(repo)
+	recoveryUsecase, _ := usecase2.NewRecoveryUsecase(repo)
 
 	// Controllers
 	authController := controller.NewAuthController(authUsecase)

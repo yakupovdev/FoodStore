@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/controller"
-	"github.com/yakupovdev/FoodStore/middleware"
+	middleware2 "github.com/yakupovdev/FoodStore/internal/middleware"
 )
 
 type Deps struct {
@@ -17,7 +17,7 @@ type Deps struct {
 func SetupRouter(d Deps) *gin.Engine {
 	router := gin.New()
 
-	router.Use(middleware.LoggerMiddleware())
+	router.Use(middleware2.LoggerMiddleware())
 
 	auth := router.Group("/auth")
 	{
@@ -27,7 +27,7 @@ func SetupRouter(d Deps) *gin.Engine {
 
 	}
 	protected := router.Group("/protected")
-	protected.Use(middleware.AuthMiddleware())
+	protected.Use(middleware2.AuthMiddleware())
 	{
 		protected.GET("/profile", func(c *gin.Context) {
 			userID, exists := c.Get("user_id")
@@ -48,7 +48,7 @@ func SetupRouter(d Deps) *gin.Engine {
 		recovery.POST("/verify-code", d.EmailController.VerifyCode)
 	}
 	recovery_password := router.Group("/recovery-password")
-	recovery_password.Use(middleware.AuthMiddleware())
+	recovery_password.Use(middleware2.AuthMiddleware())
 	{
 		recovery_password.POST("/reset", d.RecoveryController.ResetUserPassword)
 	}
