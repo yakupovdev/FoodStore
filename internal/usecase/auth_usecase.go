@@ -52,7 +52,7 @@ func (au *AuthUsecase) LoginUser(email, password, userType string) (string, stri
 
 	accessToken, err := security.GenerateToken(userID, userType, security.AccessToken)
 	refreshToken, err := security.GenerateToken(userID, userType, security.RefreshToken)
-	expired_at := time.Now().Add(10 * time.Second)
+	expired_at := time.Now().Add(1 * time.Hour)
 
 	if err := au.repo.MoveFromWhiteListToBlackList(userID); err != nil {
 		return "", "", ErrTokenStorage

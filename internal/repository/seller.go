@@ -3,7 +3,9 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"log"
 
 	pg "github.com/jackc/pgx/v5"
 	"github.com/yakupovdev/FoodStore/internal/model"
@@ -25,8 +27,8 @@ func (r *SellerRepository) GetSellerProfile(userID int64) (model.Seller, error) 
 	stmtBase := `
         SELECT u.email, u.balance, s.name, s.rating 
         FROM users u
-        JOIN sellers s ON u.id = s.seller_id
-        WHERE u.id = $1`
+        JOIN sellers s ON u.userid = s.seller_id
+        WHERE u.userid = $1`
 
 	err := r.Conn.QueryRow(ctx, stmtBase, userID).Scan(
 		&seller.Email, &seller.Balance, &seller.Name, &seller.Rating,
@@ -82,11 +84,12 @@ func (r *SellerRepository) CreateSellerOffer(params model.CreateOfferParams) err
         SELECT categories_id FROM categories 
         WHERE name = $1 AND parent_id IS NULL`, params.CategoryName).Scan(&rootCategoryID)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = tx.QueryRow(ctx, `
             INSERT INTO categories (name, parent_id) 
             VALUES ($1, NULL) 
             RETURNING categories_id`, params.CategoryName).Scan(&rootCategoryID)
+		log.Println(err)
 		if err != nil {
 			return fmt.Errorf("create root category: %w", err)
 		}
@@ -100,7 +103,7 @@ func (r *SellerRepository) CreateSellerOffer(params model.CreateOfferParams) err
         SELECT categories_id FROM categories 
         WHERE name = $1 AND parent_id = $2`, params.SubCategoryName, rootCategoryID).Scan(&subCategoryID)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err = tx.QueryRow(ctx, `
             INSERT INTO categories (name, parent_id) 
             VALUES ($1, $2) 

@@ -1,8 +1,6 @@
 package router
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/controller"
 	"github.com/yakupovdev/FoodStore/internal/middleware"
@@ -17,6 +15,7 @@ type Deps struct {
 	RefreshAccessTokenController *controller.RefreshAccessTokenController
 	CheckTokenIsValidUsecase     *usecase.CheckTokenIsValidUsecase
 	ClientController             *controller.ClientController
+	SellerController             *controller.SellerController
 }
 
 func SetupRouter(d Deps) *gin.Engine {
@@ -32,30 +31,20 @@ func SetupRouter(d Deps) *gin.Engine {
 	protected := router.Group("/protected")
 	protected.Use(middleware.AuthMiddleware(d.CheckTokenIsValidUsecase, security.AccessToken))
 	{
-		protected.GET("/profile", func(c *gin.Context) {
-			userID, exists := c.Get("user_id")
-			if !exists {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "user_id not found in context"})
-				return
-			}
-			userType, exists := c.Get("user_type")
-			if !exists {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "user_type not found in context"})
-				return
-			}
+		client := protected.Group("/client")
+		client.Use(middleware.AccessTypeMiddleware("client"))
+		{
+			client.GET("/orders", d.ClientController.GetOrders)
+			client.GET("/profile", d.ClientController.GetProfile)
+		}
 
-			c.JSON(http.StatusOK, gin.H{
-				"user_id":   userID,
-				"user_type": userType,
-				"message":   "This is a protected profile route",
-			})
-		})
-	}
-	client := router.Group("/client")
-	client.Use(middleware.AuthMiddleware(d.CheckTokenIsValidUsecase, security.AccessToken))
-	{
-		client.GET("/orders", d.ClientController.GetOrders)
-		client.GET("/profile", d.ClientController.GetProfile)
+		seller := protected.Group("/seller")
+		seller.Use(middleware.AccessTypeMiddleware("seller"))
+		{
+			seller.GET("/profile", d.SellerController.GetProfile)
+			seller.GET("/offers", d.SellerController.GetOffers)
+			seller.POST("/offers", d.SellerController.CreateOffer)
+		}
 	}
 
 	recovery := router.Group("/recovery")

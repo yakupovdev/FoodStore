@@ -9,14 +9,17 @@ type SellerUsecase struct {
 	repo *repository.SellerRepository
 }
 
-func NewSellerUsecase(repo *repository.SellerRepository) *SellerUsecase {
+func NewSellerUsecase(repo *repository.SellerRepository) (*SellerUsecase, error) {
+	if repo == nil {
+		return nil, ErrDatabaseConnection
+	}
 	return &SellerUsecase{
 		repo: repo,
-	}
+	}, nil
 }
 
 func (uc *SellerUsecase) GetProfileByID(userID int64) (model.SellerProfileResponse, error) {
-	seller, err := uc.GetProfileByID(userID)
+	seller, err := uc.repo.GetSellerProfile(userID)
 	if err != nil {
 		return model.SellerProfileResponse{}, err
 	}

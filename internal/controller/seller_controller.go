@@ -19,7 +19,7 @@ func NewSellerController(uc *usecase.SellerUsecase) *SellerController {
 	}
 }
 
-func (c *SellerController) GetSellerProfile(ctx *gin.Context) {
+func (c *SellerController) GetProfile(ctx *gin.Context) {
 	userID, exist := ctx.Get("user_id")
 	if !exist {
 		ctx.JSON(ErrInvalidToken.Status, ErrInvalidToken.Response)
@@ -55,7 +55,7 @@ func (c *SellerController) GetSellerProfile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, resp)
 }
 
-func (c *SellerController) GetSellerOffers(ctx *gin.Context) {
+func (c *SellerController) GetOffers(ctx *gin.Context) {
 	userID, exist := ctx.Get("user_id")
 	if !exist {
 		ctx.JSON(ErrInvalidToken.Status, ErrInvalidToken.Response)
@@ -131,7 +131,7 @@ func (c *SellerController) CreateOffer(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, model.CreateSellerOfferResponse{
-		Message:         "Creates successfully",
+		Message:         "Created successfully",
 		ProductName:     req.ProductName,
 		Description:     req.Description,
 		Image:           req.Image,

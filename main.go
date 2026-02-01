@@ -51,16 +51,18 @@ func main() {
 	}
 
 	// Repository
-	repo := repository.NewPostgres(conn)
-	repo1 := repository.NewOrdersRepo(conn)
+	userRepo := repository.NewPostgres(conn)
+	clientRepo := repository.NewOrdersRepo(conn)
+	sellerRepo := repository.NewSellerRepository(conn)
 
 	// Usecases
-	authUsecase, _ := usecase.NewAuthUsecase(repo)
-	emailUsecase, _ := usecase.NewEmailUsecase(repo)
-	recoveryUsecase, _ := usecase.NewRecoveryUsecase(repo)
-	refreshAccessTokenUsecase, _ := usecase.NewRefreshAccessTokenUsecase(repo)
-	chechTokenIsValidUsecase, _ := usecase.NewCheckTokenIsValidUsecase(repo)
-	clientUsecase, _ := usecase.NewClientUsecase(repo1)
+	authUsecase, _ := usecase.NewAuthUsecase(userRepo)
+	emailUsecase, _ := usecase.NewEmailUsecase(userRepo)
+	recoveryUsecase, _ := usecase.NewRecoveryUsecase(userRepo)
+	refreshAccessTokenUsecase, _ := usecase.NewRefreshAccessTokenUsecase(userRepo)
+	chechTokenIsValidUsecase, _ := usecase.NewCheckTokenIsValidUsecase(userRepo)
+	clientUsecase, _ := usecase.NewClientUsecase(clientRepo)
+	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo)
 
 	// Controllers
 	authController := controller.NewAuthController(authUsecase)
@@ -68,6 +70,7 @@ func main() {
 	recoveryController := controller.NewRecoveryController(recoveryUsecase)
 	refreshAccessTokenController := controller.NewRefreshAccessTokenController(refreshAccessTokenUsecase)
 	clientController := controller.NewClientController(clientUsecase)
+	sellerController := controller.NewSellerController(sellerUsecase)
 
 	// Router
 	r := router.SetupRouter(router.Deps{
@@ -77,6 +80,7 @@ func main() {
 		RefreshAccessTokenController: refreshAccessTokenController,
 		CheckTokenIsValidUsecase:     chechTokenIsValidUsecase,
 		ClientController:             clientController,
+		SellerController:             sellerController,
 	})
 
 	// HTTP Server
@@ -107,7 +111,7 @@ func main() {
 				log.Println("background cleanup stopped")
 				return
 			case <-ticker.C:
-				if err := repo.DeleteExpiredAccessTokens(); err != nil {
+				if err := userRepo.DeleteExpiredAccessTokens(); err != nil {
 					log.Printf("Error deleting expired access tokens: %v", err)
 				} else {
 					log.Println("Expired access tokens deleted successfully")
