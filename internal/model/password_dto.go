@@ -1,12 +1,14 @@
 package model
 
 type VerifyEmailRequest struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
+	UserType string `json:"user_type"`
 }
 
 type VerifyCodeRequest struct {
-	Email string `json:"email"`
-	Code  string `json:"code"`
+	Email    string `json:"email"`
+	Code     string `json:"code"`
+	UserType string `json:"user_type"`
 }
 
 type ResetUserPasswordRequest struct {

@@ -23,6 +23,11 @@ func (ratc *RefreshAccessTokenController) RefreshAccessToken(ctx *gin.Context) {
 		ctx.JSON(ErrUserNotFound.Status, ErrUserNotFound.Response)
 		return
 	}
+	userType, exists := ctx.Get("user_type")
+	if !exists {
+		ctx.JSON(ErrUserNotFound.Status, ErrUserNotFound.Response)
+		return
+	}
 
 	var uid int64
 	switch v := userId.(type) {
@@ -44,7 +49,15 @@ func (ratc *RefreshAccessTokenController) RefreshAccessToken(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := ratc.ratu.RefreshAccessToken(uid)
+	var utype string
+	switch v := userType.(type) {
+	case string:
+		utype = v
+	default:
+		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+	}
+
+	accessToken, err := ratc.ratu.RefreshAccessToken(uid, utype)
 	if err != nil {
 		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
 		return

@@ -76,7 +76,7 @@ func ensureUsersSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS users (
 	userid BIGSERIAL PRIMARY KEY,
-	email TEXT NOT NULL UNIQUE,
+	email TEXT NOT NULL,
 	password_hash TEXT NOT NULL,
 	type TEXT NOT NULL,
 	balance BIGINT NOT NULL DEFAULT 0,
@@ -97,9 +97,10 @@ CREATE TABLE IF NOT EXISTS password_recovery_codes (
 	userid BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
 	email TEXT NOT NULL,
 	code_hash TEXT NOT NULL,
+    type TEXT NOT NULL,
 	expired_at TIMESTAMPTZ NOT NULL,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-	PRIMARY KEY (userID, email)
+	PRIMARY KEY (userID)
 );`,
 		`CREATE INDEX IF NOT EXISTS idx_prc_email ON password_recovery_codes (email);`,
 		`CREATE INDEX IF NOT EXISTS idx_prc_expired_at ON password_recovery_codes (expired_at);`,
@@ -178,6 +179,7 @@ func ensureClientsSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS clients (
     client_id BIGINT PRIMARY KEY REFERENCES users(userid) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
     rating NUMERIC(3,2) DEFAULT 0
 );`)
 	if err != nil {

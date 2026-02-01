@@ -27,12 +27,12 @@ func (ec *EmailController) SendCodeByEmail(ctx *gin.Context) {
 		return
 	}
 
-	if req.Email == "" {
+	if req.Email == "" || req.UserType == "" {
 		ctx.JSON(ErrEmptyFields.Status, ErrEmptyFields.Response)
 		return
 	}
 
-	err = ec.eu.SendCodeByEmail(req.Email)
+	err = ec.eu.SendCodeByEmail(req.Email, req.UserType)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
@@ -56,12 +56,12 @@ func (ec *EmailController) VerifyCode(ctx *gin.Context) {
 		return
 	}
 
-	if req.Email == "" || req.Code == "" {
+	if req.Email == "" || req.Code == "" || req.UserType == "" {
 		ctx.JSON(ErrEmptyFields.Status, ErrEmptyFields.Response)
 		return
 	}
 
-	recoveryToken, err := ec.eu.VerifyCode(req.Email, req.Code)
+	recoveryToken, err := ec.eu.VerifyCode(req.Email, req.UserType, req.Code)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):

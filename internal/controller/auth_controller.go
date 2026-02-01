@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/model"
@@ -27,12 +28,17 @@ func (ac *AuthController) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	if req.Email == "" || req.Password == "" {
+	if req.Email == "" || req.Password == "" || req.UserType == "" || req.Name == "" {
 		ctx.JSON(ErrEmptyFields.Status, ErrEmptyFields.Response)
 		return
 	}
 
-	err = ac.uc.RegisterUser(req.Email, req.Password, req.UserType, req.Balance)
+	if lowerUserType := strings.ToLower(req.UserType); lowerUserType != "client" && lowerUserType != "seller" {
+		ctx.JSON(ErrInvalidUserType.Status, ErrInvalidUserType.Response)
+		return
+	}
+
+	err = ac.uc.RegisterUser(req.Email, req.Password, req.UserType, req.Balance, req.Name)
 
 	if err != nil {
 		switch {
@@ -44,7 +50,7 @@ func (ac *AuthController) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.RegisterResponse{Message: "User Registered"})
+	ctx.JSON(http.StatusOK, model.RegisterResponse{Message: "User Registered", Name: req.Name, Email: req.Email, UserType: req.UserType, Balance: req.Balance})
 }
 
 func (ac *AuthController) LoginUser(ctx *gin.Context) {
@@ -57,12 +63,12 @@ func (ac *AuthController) LoginUser(ctx *gin.Context) {
 		return
 	}
 
-	if req.Email == "" || req.Password == "" {
+	if req.Email == "" || req.Password == "" || req.UserType == "" {
 		ctx.JSON(ErrEmptyFields.Status, ErrEmptyFields.Response)
 		return
 	}
 
-	accessToken, refreshToken, err := ac.uc.LoginUser(req.Email, req.Password)
+	accessToken, refreshToken, err := ac.uc.LoginUser(req.Email, req.Password, req.UserType)
 
 	if err != nil {
 		switch {
