@@ -22,8 +22,8 @@ func NewAuthUsecase(repo *repository.Postgres) (*AuthUsecase, error) {
 	}, nil
 }
 
-func (au *AuthUsecase) RegisterUser(email string, password string, userType string, balance int64) error {
-	exist, err := au.repo.GetUserByEmail(email)
+func (au *AuthUsecase) RegisterUser(email string, password string, userType string, balance int64, name string) error {
+	exist, err := au.repo.UserExists(email, userType)
 
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func (au *AuthUsecase) RegisterUser(email string, password string, userType stri
 	}
 
 	hashHex := security.HashPassword(password)
-	_, err = au.repo.RegisterUser(email, hashHex, userType, balance)
+	_, err = au.repo.RegisterUser(email, hashHex, userType, balance, name)
 
 	if err != nil {
 		return err
@@ -42,16 +42,16 @@ func (au *AuthUsecase) RegisterUser(email string, password string, userType stri
 	return nil
 }
 
-func (au *AuthUsecase) LoginUser(email string, password string) (string, string, error) {
+func (au *AuthUsecase) LoginUser(email, password, userType string) (string, string, error) {
 	hashHex := security.HashPassword(password)
-	userID, err := au.repo.LoginUser(email, hashHex)
+	userID, err := au.repo.LoginUser(email, hashHex, userType)
 
 	if err != nil {
 		return "", "", ErrInvalidCredentials
 	}
 
-	accessToken, err := security.GenerateToken(userID,security.AccessToken)
-	refreshToken, err := security.GenerateToken(userID,security.RefreshToken)
+	accessToken, err := security.GenerateToken(userID, userType, security.AccessToken)
+	refreshToken, err := security.GenerateToken(userID, userType, security.RefreshToken)
 	expired_at := time.Now().Add(time.Hour)
 
 	if err := au.repo.MoveFromWhiteListToBlackList(userID); err != nil {

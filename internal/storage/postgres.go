@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"fmt"
-	"log"
 
 	pg "github.com/jackc/pgx/v5"
 )
@@ -49,6 +48,27 @@ func InitSchema(ctx context.Context, conn *pg.Conn) error {
 	if err := ensureBlacklistSchema(ctx, conn); err != nil {
 		return err
 	}
+	if err := ensureCategoriesSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureProductsSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureClientsSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureSellersSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureSellerOffersSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureOrdersSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureOrdersItemsSchema(ctx, conn); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -56,7 +76,7 @@ func ensureUsersSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS users (
 	userid BIGSERIAL PRIMARY KEY,
-	email TEXT NOT NULL UNIQUE,
+	email TEXT NOT NULL,
 	password_hash TEXT NOT NULL,
 	type TEXT NOT NULL,
 	balance BIGINT NOT NULL DEFAULT 0,
@@ -77,9 +97,10 @@ CREATE TABLE IF NOT EXISTS password_recovery_codes (
 	userid BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
 	email TEXT NOT NULL,
 	code_hash TEXT NOT NULL,
+    type TEXT NOT NULL,
 	expired_at TIMESTAMPTZ NOT NULL,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-	PRIMARY KEY (userID, email)
+	PRIMARY KEY (userID)
 );`,
 		`CREATE INDEX IF NOT EXISTS idx_prc_email ON password_recovery_codes (email);`,
 		`CREATE INDEX IF NOT EXISTS idx_prc_expired_at ON password_recovery_codes (expired_at);`,
@@ -105,7 +126,6 @@ CREATE TABLE IF NOT EXISTS token_whitelist (
 );
 `)
 	if err != nil {
-		log.Println(err)
 		return ErrWhitelistSchema
 	}
 	return nil
@@ -121,8 +141,108 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
     );
 `)
 	if err != nil {
-		log.Println(err)
 		return ErrBlacklistSchema
+	}
+	return nil
+}
+
+func ensureCategoriesSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS categories (
+    categories_id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    parent_id BIGINT REFERENCES categories(categories_id) ON DELETE SET NULL
+);`)
+	if err != nil {
+		return ErrCategoriesSchema
+	}
+	return nil
+}
+
+func ensureProductsSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS products (
+    product_id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    categories_id BIGINT NOT NULL REFERENCES categories(categories_id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    img VARCHAR(255)
+);`)
+	if err != nil {
+		return ErrProductsSchema
+	}
+	return nil
+}
+
+func ensureClientsSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS clients (
+    client_id BIGINT PRIMARY KEY REFERENCES users(userid) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    rating NUMERIC(3,2) DEFAULT 0
+);`)
+	if err != nil {
+		return ErrClientsSchema
+	}
+	return nil
+}
+
+func ensureSellersSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS sellers (
+    seller_id BIGINT PRIMARY KEY REFERENCES users(userid) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    rating NUMERIC(3,2) DEFAULT 0
+);`)
+	if err != nil {
+		return ErrSellersSchema
+	}
+	return nil
+}
+
+func ensureSellerOffersSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS seller_offers (
+    seller_id BIGINT NOT NULL REFERENCES sellers(seller_id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
+    price BIGINT NOT NULL,
+    quantity INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (seller_id, product_id)
+);`)
+	if err != nil {
+		return ErrSellerOffersSchema
+	}
+	return nil
+}
+
+func ensureOrdersSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS orders (
+    order_id BIGSERIAL PRIMARY KEY,
+    client_id BIGINT NOT NULL REFERENCES clients(client_id),
+    status VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);`)
+	if err != nil {
+		return ErrOrdersSchema
+	}
+	return nil
+}
+
+func ensureOrdersItemsSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS orders_items (
+    order_item_id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL REFERENCES orders(order_id) ON DELETE CASCADE,
+    seller_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    quantity INT NOT NULL,
+    price_at_purchase BIGINT NOT NULL,
+    FOREIGN KEY (seller_id, product_id) REFERENCES seller_offers(seller_id, product_id)
+);`)
+	if err != nil {
+		return ErrOrdersItemsSchema
 	}
 	return nil
 }

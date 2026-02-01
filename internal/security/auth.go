@@ -13,7 +13,8 @@ import (
 )
 
 type Claims struct {
-	UserID int64 `json:"user_id"`
+	UserID   int64  `json:"user_id"`
+	UserType string `json:"user_type"`
 	jwt.RegisteredClaims
 }
 
@@ -48,7 +49,7 @@ func HashPassword(password string) string {
 	return hashHex
 }
 
-func GenerateToken(userID int64, typeToken TokenType) (string, error) {
+func GenerateToken(userID int64, userType string, typeToken TokenType) (string, error) {
 	if err := loadEnv(); err != nil {
 		return "", err
 	}
@@ -56,7 +57,8 @@ func GenerateToken(userID int64, typeToken TokenType) (string, error) {
 
 	date := jwt.NewNumericDate(time.Now().Add(mapTokenLiving[typeToken]))
 	claims := Claims{
-		UserID: userID,
+		UserID:   userID,
+		UserType: userType,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: date,
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

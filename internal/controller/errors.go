@@ -16,4 +16,5 @@ var (
 	ErrUserNotFound         = HTTPError{Status: 404, Response: model.ErrorResponse{Error: "user not found"}}
 	ErrVerifyCodeIsNotValid = HTTPError{Status: 400, Response: model.ErrorResponse{Error: "verify code is not valid"}}
 	ErrInvalidToken         = HTTPError{Status: 401, Response: model.ErrorResponse{Error: "invalid token"}}
+	ErrInvalidUserType      = HTTPError{Status: 401, Response: model.ErrorResponse{Error: "invalid user type"}}
 )

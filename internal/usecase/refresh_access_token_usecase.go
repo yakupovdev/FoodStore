@@ -21,8 +21,8 @@ func NewRefreshAccessTokenUsecase(repo *repository.Postgres) (*RefreshAccessToke
 	}, nil
 }
 
-func (rtu *RefreshAccessTokenUsecase) RefreshAccessToken(userID int64) (string, error) {
-	accessToken, err := security.GenerateToken(userID,security.AccessToken)
+func (rtu *RefreshAccessTokenUsecase) RefreshAccessToken(userID int64, userType string) (string, error) {
+	accessToken, err := security.GenerateToken(userID, userType, security.AccessToken)
 	if err != nil {
 		return "", ErrTokenGeneration
 	}

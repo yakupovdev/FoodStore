@@ -47,6 +47,7 @@ func AuthMiddleware(checkToken *usecase.CheckTokenIsValidUsecase, typeToken secu
 		}
 
 		c.Set("user_id", claims.UserID)
+		c.Set("user_type", claims.UserType)
 
 		c.Next()
 	}

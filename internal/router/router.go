@@ -37,10 +37,16 @@ func SetupRouter(d Deps) *gin.Engine {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "user_id not found in context"})
 				return
 			}
+			userType, exists := c.Get("user_type")
+			if !exists {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "user_type not found in context"})
+				return
+			}
 
 			c.JSON(http.StatusOK, gin.H{
-				"user_id": userID,
-				"message": "This is a protected profile route",
+				"user_id":   userID,
+				"user_type": userType,
+				"message":   "This is a protected profile route",
 			})
 		})
 	}

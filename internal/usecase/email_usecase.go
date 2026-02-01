@@ -22,8 +22,8 @@ func NewEmailUsecase(repo *repository.Postgres) (*EmailUsecase, error) {
 	}, nil
 }
 
-func (eu *EmailUsecase) SendCodeByEmail(emailTo string) error {
-	userID, err := eu.repo.GetUserIDByEmail(emailTo)
+func (eu *EmailUsecase) SendCodeByEmail(emailTo, userType string) error {
+	userID, err := eu.repo.GetUserIDByEmailAndType(emailTo, userType)
 
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
@@ -64,7 +64,7 @@ func (eu *EmailUsecase) SendCodeByEmail(emailTo string) error {
 		return ErrSMTPFailed
 	}
 
-	err = eu.repo.SaveRecoveryCode(userID, emailTo, code)
+	err = eu.repo.SaveRecoveryCode(userID, emailTo, userType, code)
 
 	if err != nil {
 		return ErrInternalServer
@@ -73,8 +73,8 @@ func (eu *EmailUsecase) SendCodeByEmail(emailTo string) error {
 	return nil
 }
 
-func (eu *EmailUsecase) VerifyCode(email, code string) (string, error) {
-	userID, err := eu.repo.GetUserIDByEmail(email)
+func (eu *EmailUsecase) VerifyCode(email, userType, code string) (string, error) {
+	userID, err := eu.repo.GetUserIDByEmailAndType(email, userType)
 
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
@@ -84,7 +84,7 @@ func (eu *EmailUsecase) VerifyCode(email, code string) (string, error) {
 		}
 	}
 
-	isValidCode, err := eu.repo.VerifyRecoveryCode(email, code)
+	isValidCode, err := eu.repo.VerifyRecoveryCode(email, userType, code)
 	if err != nil {
 		return "", ErrVerificationFailed
 	}
@@ -93,13 +93,13 @@ func (eu *EmailUsecase) VerifyCode(email, code string) (string, error) {
 		return "", ErrCodeIsNotValid
 	}
 
-	recoveryToken, err := security.GenerateToken(userID, security.RecoveryToken)
+	recoveryToken, err := security.GenerateToken(userID, userType, security.RecoveryToken)
 
 	if err != nil {
 		return "", ErrTokenGeneration
 	}
 
-	_ = eu.repo.DeleteRecoveryCode(email)
+	_ = eu.repo.DeleteRecoveryCode(email, userType)
 
 	return recoveryToken, nil
 }
