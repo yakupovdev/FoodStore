@@ -26,8 +26,8 @@ const (
 	RecoveryToken TokenType = "JWT_SECRET_RECOVERY"
 
 	AccessTokenLiving   time.Duration = 1 * time.Hour
-	RefreshTokenLiving  time.Duration = 7 * time.Hour
-	RecoveryTokenLiving time.Duration = 1 * time.Hour
+	RefreshTokenLiving  time.Duration = 7 * 24 * time.Hour
+	RecoveryTokenLiving time.Duration = 1 * time.Minute
 )
 
 var mapTokenLiving = map[TokenType]time.Duration{

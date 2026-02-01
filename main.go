@@ -20,9 +20,11 @@ import (
 )
 
 func main() {
+	appCtx, appCancel := context.WithCancel(context.Background())
+	defer appCancel()
+
 	// DB
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading ..env file")
 	}
 	Database := os.Getenv("DATABASE")
@@ -32,9 +34,7 @@ func main() {
 	Username := os.Getenv("USER")
 	Password := os.Getenv("PASSWORD")
 
-	ctx := context.Background()
-
-	conn, err := storage.NewPostgresDB(ctx, storage.Config{
+	conn, err := storage.NewPostgresDB(appCtx, storage.Config{
 		Database: Database,
 		Host:     Host,
 		Port:     uint16(Port),
@@ -44,15 +44,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer conn.Close(appCtx)
 
-	if err := storage.InitSchema(ctx, conn); err != nil {
+	if err := storage.InitSchema(appCtx, conn); err != nil {
 		panic(err)
 	}
 
-	defer conn.Close(ctx)
-
 	// Repository
 	repo := repository.NewPostgres(conn)
+	repo1 := repository.NewOrdersRepo(conn)
 
 	// Usecases
 	authUsecase, _ := usecase.NewAuthUsecase(repo)
@@ -60,12 +60,14 @@ func main() {
 	recoveryUsecase, _ := usecase.NewRecoveryUsecase(repo)
 	refreshAccessTokenUsecase, _ := usecase.NewRefreshAccessTokenUsecase(repo)
 	chechTokenIsValidUsecase, _ := usecase.NewCheckTokenIsValidUsecase(repo)
+	clientUsecase, _ := usecase.NewClientUsecase(repo1)
 
 	// Controllers
 	authController := controller.NewAuthController(authUsecase)
 	emailController := controller.NewEmailController(emailUsecase)
 	recoveryController := controller.NewRecoveryController(recoveryUsecase)
 	refreshAccessTokenController := controller.NewRefreshAccessTokenController(refreshAccessTokenUsecase)
+	clientController := controller.NewClientController(clientUsecase)
 
 	// Router
 	r := router.SetupRouter(router.Deps{
@@ -74,6 +76,7 @@ func main() {
 		RecoveryController:           recoveryController,
 		RefreshAccessTokenController: refreshAccessTokenController,
 		CheckTokenIsValidUsecase:     chechTokenIsValidUsecase,
+		ClientController:             clientController,
 	})
 
 	// HTTP Server
@@ -93,6 +96,26 @@ func main() {
 		}
 	}()
 
+	// Background task
+	go func() {
+		ticker := time.NewTicker(10 * time.Minute)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-appCtx.Done():
+				log.Println("background cleanup stopped")
+				return
+			case <-ticker.C:
+				if err := repo.DeleteExpiredAccessTokens(); err != nil {
+					log.Printf("Error deleting expired access tokens: %v", err)
+				} else {
+					log.Println("Expired access tokens deleted successfully")
+				}
+			}
+		}
+	}()
+
 	// GRACEFUL SHUTDOWN
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -100,10 +123,14 @@ func main() {
 
 	log.Println("shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// остановить фоновые задачи
+	appCancel()
+
+	// отдельный контекст только для Shutdown
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Fatalf("server shutdown failed: %v", err)
 	}
 

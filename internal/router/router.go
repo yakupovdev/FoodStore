@@ -16,6 +16,7 @@ type Deps struct {
 	RecoveryController           *controller.RecoveryController
 	RefreshAccessTokenController *controller.RefreshAccessTokenController
 	CheckTokenIsValidUsecase     *usecase.CheckTokenIsValidUsecase
+	ClientController             *controller.ClientController
 }
 
 func SetupRouter(d Deps) *gin.Engine {
@@ -50,6 +51,13 @@ func SetupRouter(d Deps) *gin.Engine {
 			})
 		})
 	}
+	client := router.Group("/client")
+	client.Use(middleware.AuthMiddleware(d.CheckTokenIsValidUsecase, security.AccessToken))
+	{
+		client.GET("/orders", d.ClientController.GetOrders)
+		client.GET("/profile", d.ClientController.GetProfile)
+	}
+
 	recovery := router.Group("/recovery")
 	{
 		recovery.POST("/send-code", d.EmailController.SendCodeByEmail)
