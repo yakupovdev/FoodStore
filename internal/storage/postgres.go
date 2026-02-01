@@ -76,9 +76,9 @@ func ensureUsersSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS users (
 	userid BIGSERIAL PRIMARY KEY,
-	email TEXT NOT NULL,
-	password_hash TEXT NOT NULL,
-	type TEXT NOT NULL,
+	email VARCHAR(100) NOT NULL,
+	password_hash VARCHAR(255) NOT NULL,
+	type VARCHAR(10) NOT NULL,
 	balance BIGINT NOT NULL DEFAULT 0,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 	last_enter TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -95,9 +95,9 @@ func ensureRecoveryCodesSchema(ctx context.Context, conn *pg.Conn) error {
 		`
 CREATE TABLE IF NOT EXISTS password_recovery_codes (
 	userid BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
-	email TEXT NOT NULL,
-	code_hash TEXT NOT NULL,
-    type TEXT NOT NULL,
+	email VARCHAR(100) NOT NULL,
+	code_hash VARCHAR(255) NOT NULL,
+    type VARCHAR(10) NOT NULL,
 	expired_at TIMESTAMPTZ NOT NULL,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 	PRIMARY KEY (userID)
@@ -119,7 +119,7 @@ func ensureWhitelistSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS token_whitelist (
 	userid BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
-	access_token_hash TEXT NOT NULL,
+	access_token_hash VARCHAR(255) NOT NULL,
     expired_at TIMESTAMPTZ NOT NULL,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 	PRIMARY KEY (userID, access_token_hash)
@@ -135,7 +135,7 @@ func ensureBlacklistSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS token_blacklist (
     	userid BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
-    	access_token_hash TEXT NOT NULL,
+    	access_token_hash VARCHAR(255) NOT NULL,
     expired_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (userID, access_token_hash)
     );
@@ -221,7 +221,7 @@ func ensureOrdersSchema(ctx context.Context, conn *pg.Conn) error {
 CREATE TABLE IF NOT EXISTS orders (
     order_id BIGSERIAL PRIMARY KEY,
     client_id BIGINT NOT NULL REFERENCES clients(client_id),
-    status VARCHAR(255) NOT NULL,
+    status VARCHAR(100) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );`)
 	if err != nil {
@@ -244,5 +244,35 @@ CREATE TABLE IF NOT EXISTS orders_items (
 	if err != nil {
 		return ErrOrdersItemsSchema
 	}
+	return nil
+}
+
+func ensureCategoriesForTest(ctx context.Context, conn *pg.Conn) error {
+	stmt := []string{
+		`INSERT INTO categories (name, parent_id) VALUES('Milk,cheese and eggs',NULL);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Meat and poultry',NULL);`,
+		`INSERT INTO categories (name, parent_id)VALUES('Fish and products',NULL);`,
+
+		`INSERT INTO categories (name, parent_id) VALUES('Milk, cream, condensed milk',1);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Kefir, cottage cheese, sour cream',1);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Yogurts, cottage cheese and desserts',1);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Eggs, butter, margarine',1);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Cheese',1);`,
+
+		`INSERT INTO categories (name, parent_id) VALUES('Meat, steaks, minced meat',2);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Chicken, turkey, and poultry',2);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Semi-finished products and marinades',2);`,
+
+		`INSERT INTO categories (name, parent_id) VALUES('Fish',3);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Seafood',3);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Caviar and snacks',3);`,
+	}
+
+	for _, s := range stmt {
+		if _, err := conn.Exec(ctx, s); err != nil {
+			return ErrCategoriesAdd
+		}
+	}
+
 	return nil
 }

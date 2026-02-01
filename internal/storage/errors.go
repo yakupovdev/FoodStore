@@ -9,6 +9,7 @@ var (
 	ErrWhitelistSchema     = errors.New("whitelist schema error")
 	ErrBlacklistSchema     = errors.New("blacklist schema error")
 	ErrCategoriesSchema    = errors.New("categories schema error")
+	ErrCategoriesAdd       = errors.New("failed to add category")
 	ErrProductsSchema      = errors.New("products schema error")
 	ErrClientsSchema       = errors.New("clients schema error")
 	ErrSellersSchema       = errors.New("sellers schema error")
