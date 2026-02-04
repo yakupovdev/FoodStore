@@ -69,32 +69,33 @@ func (r *SellerRepository) GetSellerOffers(userID int64) ([]model.Offer, error) 
 	return offers, nil
 }
 
-//func (r *SellerRepository) GetSellerOffersByProductID(productID  int64) ([]model.Offer, error) {
-//	ctx := context.Background()
-//
-//	stmtOffers := `
-//        SELECT p.name, p.description, p.img, so.price, so.quantity
-//		FROM seller_offers so
-//		JOIN products p ON so.product_id = p.product_id
-//		WHERE p.product_id = $1`
-//
-//	rows, err := r.Conn.Query(ctx, stmtOffers, productID)
-//	if err != nil {
-//		return make([]model.Offer, 0), fmt.Errorf("query offers: %w", err)
-//	}
-//	defer rows.Close()
-//
-//	var offers []model.Offer
-//	for rows.Next() {
-//		var o model.Offer
-//		if err := rows.Scan(&o.Name, &o.Description, &o.Image, &o.Price, &o.Quantity); err != nil {
-//			return make([]model.Offer, 0), err
-//		}
-//		offers = append(offers, o)
-//	}
-//
-//	return offers, nil
-//}
+func (r *SellerRepository) GetSellerOffersByProductID(productID int64) ([]model.Offer, error) {
+	ctx := context.Background()
+
+	stmtOffers := `
+       SELECT s.seller_id,s.name, p.description, p.img, so.price, so.quantity
+		FROM seller_offers so
+		JOIN products p ON so.product_id = p.product_id
+		JOIN sellers s ON s.seller_id = so.seller_id
+		WHERE p.product_id = $1`
+
+	rows, err := r.Conn.Query(ctx, stmtOffers, productID)
+	if err != nil {
+		return make([]model.Offer, 0), fmt.Errorf("query offers: %w", err)
+	}
+	defer rows.Close()
+
+	var offers []model.Offer
+	for rows.Next() {
+		var o model.Offer
+		if err := rows.Scan(&o.SellerID, &o.Name, &o.Description, &o.Image, &o.Price, &o.Quantity); err != nil {
+			return make([]model.Offer, 0), err
+		}
+		offers = append(offers, o)
+	}
+
+	return offers, nil
+}
 
 func (r *SellerRepository) CreateSellerOffer(params model.CreateOfferParams) error {
 	ctx := context.Background()

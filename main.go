@@ -61,7 +61,7 @@ func main() {
 	recoveryUsecase, _ := usecase.NewRecoveryUsecase(userRepo)
 	refreshAccessTokenUsecase, _ := usecase.NewRefreshAccessTokenUsecase(userRepo)
 	chechTokenIsValidUsecase, _ := usecase.NewCheckTokenIsValidUsecase(userRepo)
-	clientUsecase, _ := usecase.NewClientUsecase(clientRepo)
+	clientUsecase, _ := usecase.NewClientUsecase(clientRepo, sellerRepo)
 	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo)
 
 	// Controllers

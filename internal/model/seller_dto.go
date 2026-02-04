@@ -8,6 +8,13 @@ type SellerProfileResponse struct {
 	Rating  float32 `json:"rating"`
 }
 
+type OfferDTO struct {
+	SellerID   int64  `json:"seller_id"`
+	SellerName string `json:"seller_name"`
+	Price      int64  `json:"price"`
+	Quantity   int64  `json:"quantity"`
+}
+
 type SellerOffersResponse struct {
 	Offers []Offer `json:"offers"`
 }

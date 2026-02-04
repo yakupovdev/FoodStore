@@ -11,7 +11,9 @@ type SubCategoryDTO struct {
 }
 
 type ProductDTO struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Image       string `json:"image"`
+	ProductID   int64      `json:"product_id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Image       string     `json:"image"`
+	Offers      []OfferDTO `json:"sellers_offers"`
 }

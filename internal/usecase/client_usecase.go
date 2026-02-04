@@ -6,16 +6,18 @@ import (
 )
 
 type ClientUsecase struct {
-	repo *repository.OrdersRepo
+	repo  *repository.OrdersRepo
+	repos *repository.SellerRepository
 }
 
-func NewClientUsecase(repo *repository.OrdersRepo) (*ClientUsecase, error) {
+func NewClientUsecase(repo *repository.OrdersRepo, repos *repository.SellerRepository) (*ClientUsecase, error) {
 	if repo == nil {
 		return nil, ErrDatabaseConnection
 	}
 
 	return &ClientUsecase{
-		repo: repo,
+		repo:  repo,
+		repos: repos,
 	}, nil
 }
 
@@ -92,10 +94,26 @@ func (ou *ClientUsecase) GetProducts() ([]model.CategoryDTO, error) {
 
 			var productsDTO []model.ProductDTO
 			for _, product := range products {
+				sellers, err := ou.repos.GetSellerOffersByProductID(product.ID)
+				if err != nil {
+					return nil, err
+				}
+				var offersDTO []model.OfferDTO
+				for _, seller := range sellers {
+					offerDTO := model.OfferDTO{
+						SellerID:   seller.SellerID,
+						SellerName: seller.Name,
+						Price:      seller.Price,
+						Quantity:   seller.Quantity,
+					}
+					offersDTO = append(offersDTO, offerDTO)
+				}
 				productDTO := model.ProductDTO{
+					ProductID:   product.ID,
 					Name:        product.Name,
 					Description: product.Description,
 					Image:       product.Image,
+					Offers:      offersDTO,
 				}
 				productsDTO = append(productsDTO, productDTO)
 			}
