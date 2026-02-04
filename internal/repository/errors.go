@@ -13,4 +13,6 @@ var (
 	ErrGetOrders        = errors.New("get orders error")
 	ErrGetOrderItems    = errors.New("get order items error")
 	ErrGetProfile       = errors.New("get profile error")
+	ErrGetCategories    = errors.New("get categories error")
+	ErrGetProducts      = errors.New("get products error")
 )

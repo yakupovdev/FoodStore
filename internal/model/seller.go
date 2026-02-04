@@ -13,6 +13,7 @@ type SellerOffers struct {
 }
 
 type Offer struct {
+	SellerID    int64
 	Name        string
 	Description string
 	Image       string

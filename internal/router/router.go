@@ -36,6 +36,7 @@ func SetupRouter(d Deps) *gin.Engine {
 		{
 			client.GET("/orders", d.ClientController.GetOrders)
 			client.GET("/profile", d.ClientController.GetProfile)
+			client.GET("/products", d.ClientController.GetProducts)
 		}
 
 		seller := protected.Group("/seller")

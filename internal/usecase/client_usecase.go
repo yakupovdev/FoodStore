@@ -6,16 +6,18 @@ import (
 )
 
 type ClientUsecase struct {
-	repo *repository.OrdersRepo
+	repo  *repository.OrdersRepo
+	repos *repository.SellerRepository
 }
 
-func NewClientUsecase(repo *repository.OrdersRepo) (*ClientUsecase, error) {
+func NewClientUsecase(repo *repository.OrdersRepo, repos *repository.SellerRepository) (*ClientUsecase, error) {
 	if repo == nil {
 		return nil, ErrDatabaseConnection
 	}
 
 	return &ClientUsecase{
-		repo: repo,
+		repo:  repo,
+		repos: repos,
 	}, nil
 }
 
@@ -68,4 +70,67 @@ func (ou *ClientUsecase) GetOrderItemsByOrderID(orderID int64) ([]model.ClientOr
 		return nil, err
 	}
 	return items, nil
+}
+
+func (ou *ClientUsecase) GetProducts() ([]model.CategoryDTO, error) {
+	categories, err := ou.repo.GetCategories()
+	if err != nil {
+		return nil, err
+	}
+
+	var categoriesDTO []model.CategoryDTO
+	for _, category := range categories {
+		subCategories, err := ou.repo.GetSubCategoriesByCategoryID(category.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		var subCategoriesDTO []model.SubCategoryDTO
+		for _, subCategory := range subCategories {
+			products, err := ou.repo.GetProductsBySubCategoryID(subCategory.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			var productsDTO []model.ProductDTO
+			for _, product := range products {
+				sellers, err := ou.repos.GetSellerOffersByProductID(product.ID)
+				if err != nil {
+					return nil, err
+				}
+				var offersDTO []model.OfferDTO
+				for _, seller := range sellers {
+					offerDTO := model.OfferDTO{
+						SellerID:   seller.SellerID,
+						SellerName: seller.Name,
+						Price:      seller.Price,
+						Quantity:   seller.Quantity,
+					}
+					offersDTO = append(offersDTO, offerDTO)
+				}
+				productDTO := model.ProductDTO{
+					ProductID:   product.ID,
+					Name:        product.Name,
+					Description: product.Description,
+					Image:       product.Image,
+					Offers:      offersDTO,
+				}
+				productsDTO = append(productsDTO, productDTO)
+			}
+
+			subCategoryDTO := model.SubCategoryDTO{
+				Name:     subCategory.Name,
+				Products: productsDTO,
+			}
+			subCategoriesDTO = append(subCategoriesDTO, subCategoryDTO)
+		}
+
+		categoryDTO := model.CategoryDTO{
+			Name:        category.Name,
+			SubCategory: subCategoriesDTO,
+		}
+		categoriesDTO = append(categoriesDTO, categoryDTO)
+	}
+
+	return categoriesDTO, nil
 }
