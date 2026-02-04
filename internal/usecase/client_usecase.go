@@ -69,3 +69,50 @@ func (ou *ClientUsecase) GetOrderItemsByOrderID(orderID int64) ([]model.ClientOr
 	}
 	return items, nil
 }
+
+func (ou *ClientUsecase) GetProducts() ([]model.CategoryDTO, error) {
+	categories, err := ou.repo.GetCategories()
+	if err != nil {
+		return nil, err
+	}
+
+	var categoriesDTO []model.CategoryDTO
+	for _, category := range categories {
+		subCategories, err := ou.repo.GetSubCategoriesByCategoryID(category.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		var subCategoriesDTO []model.SubCategoryDTO
+		for _, subCategory := range subCategories {
+			products, err := ou.repo.GetProductsBySubCategoryID(subCategory.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			var productsDTO []model.ProductDTO
+			for _, product := range products {
+				productDTO := model.ProductDTO{
+					Name:        product.Name,
+					Description: product.Description,
+					Image:       product.Image,
+				}
+				productsDTO = append(productsDTO, productDTO)
+			}
+
+			subCategoryDTO := model.SubCategoryDTO{
+				Name:     subCategory.Name,
+				Products: productsDTO,
+			}
+			subCategoriesDTO = append(subCategoriesDTO, subCategoryDTO)
+		}
+
+		categoryDTO := model.CategoryDTO{
+			Name:        category.Name,
+			SubCategory: subCategoriesDTO,
+		}
+		categoriesDTO = append(categoriesDTO, categoryDTO)
+	}
+
+	return categoriesDTO, nil
+}

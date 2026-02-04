@@ -50,3 +50,13 @@ func (c *ClientController) GetOrders(ctx *gin.Context) {
 		Items:     orders[0].Items,
 	})
 }
+
+func (c *ClientController) GetProducts(ctx *gin.Context) {
+	categories, err := c.uc.GetProducts()
+	if err != nil {
+		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+		return
+	}
+
+	ctx.JSON(200, categories)
+}

@@ -97,3 +97,82 @@ func (or *OrdersRepo) GetOrderItemsByOrderID(orderID int64) ([]model.ClientOrder
 
 	return orderItems, nil
 }
+
+func (or *OrdersRepo) GetCategories() ([]model.Category, error) {
+	ctx := context.Background()
+	stmt := `SELECT categories_id, name FROM categories WHERE parent_id IS NULL`
+	rows, err := or.Conn.Query(ctx, stmt)
+	if err != nil {
+		log.Println(err)
+		return nil, ErrGetCategories
+	}
+	defer rows.Close()
+
+	var categories []model.Category
+	for rows.Next() {
+		var category model.Category
+		if err := rows.Scan(&category.ID, &category.Name); err != nil {
+			log.Println(err)
+			return nil, ErrGetCategories
+		}
+		categories = append(categories, category)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println(err)
+		return nil, ErrGetCategories
+	}
+
+	return categories, nil
+}
+
+func (or *OrdersRepo) GetSubCategoriesByCategoryID(categoryID int64) ([]model.SubCategory, error) {
+	ctx := context.Background()
+	stmt := `SELECT categories_id, name FROM categories WHERE parent_id=$1`
+	rows, err := or.Conn.Query(ctx, stmt, categoryID)
+	if err != nil {
+		log.Println(err)
+		return nil, ErrGetCategories
+	}
+	defer rows.Close()
+
+	var subcategories []model.SubCategory
+	for rows.Next() {
+		var subcategory model.SubCategory
+		if err := rows.Scan(&subcategory.ID, &subcategory.Name); err != nil {
+			log.Println(err)
+			return nil, ErrGetCategories
+		}
+		subcategories = append(subcategories, subcategory)
+	}
+
+	return subcategories, nil
+}
+
+func (or *OrdersRepo) GetProductsBySubCategoryID(subCategoryID int64) ([]model.Product, error) {
+	ctx := context.Background()
+	stmt := `SELECT product_id, name, description, img FROM products WHERE categories_id=$1`
+	rows, err := or.Conn.Query(ctx, stmt, subCategoryID)
+	if err != nil {
+		log.Println(err)
+		return nil, ErrGetProducts
+	}
+	defer rows.Close()
+
+	var products []model.Product
+	for rows.Next() {
+		var product model.Product
+		if err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Image); err != nil {
+			log.Println(err)
+			return nil, ErrGetProducts
+		}
+		products = append(products, product)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println(err)
+		return nil, ErrGetProducts
+	}
+
+	return products, nil
+}
