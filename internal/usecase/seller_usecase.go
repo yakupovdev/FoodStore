@@ -11,15 +11,17 @@ import (
 )
 
 type SellerUsecase struct {
-	sellerRepo repository.SellerRepository
+	sellerRepo  repository.SellerRepository
+	productRepo repository.ProductRepository
 }
 
-func NewSellerUsecase(sellerRepo repository.SellerRepository) (*SellerUsecase, error) {
-	if sellerRepo == nil {
+func NewSellerUsecase(sellerRepo repository.SellerRepository, productRepo repository.ProductRepository) (*SellerUsecase, error) {
+	if sellerRepo == nil || productRepo == nil {
 		return nil, domain.ErrDatabaseConnection
 	}
 	return &SellerUsecase{
-		sellerRepo: sellerRepo,
+		sellerRepo:  sellerRepo,
+		productRepo: productRepo,
 	}, nil
 }
 
@@ -58,6 +60,53 @@ func (uc *SellerUsecase) GetOffersByID(ctx context.Context, userID int64) (*dto.
 	return &dto.SellerOffersListOutput{
 		Offers: items,
 	}, nil
+}
+
+func (uc *SellerUsecase) GetAllExistProducts(ctx context.Context) ([]dto.CategoryIDOutput, error) {
+	result := make([]dto.CategoryIDOutput, 0)
+	categories, err := uc.productRepo.GetCategories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, category := range categories {
+		categoryID := dto.CategoryIDOutput{
+			CategoryID:    category.ID,
+			Name:          category.Name,
+			SubCategories: make([]dto.SubCategoryIDOutput, 0),
+		}
+		subCategories, err := uc.productRepo.GetSubCategories(ctx, category.ID)
+		if err != nil {
+			return nil, err
+		}
+		for _, subCategory := range subCategories {
+			subCategoryID := dto.SubCategoryIDOutput{
+				SubCategoryID: subCategory.ID,
+				Name:          subCategory.Name,
+				Products:      make([]dto.ProductIDOutput, 0),
+			}
+
+			products, err := uc.productRepo.GetProductsBySubCategoryID(ctx, subCategory.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, product := range products {
+				productID := dto.ProductIDOutput{
+					ProductID:   product.ID,
+					Name:        product.Name,
+					Description: product.Description,
+					Image:       product.Image,
+				}
+				subCategoryID.Products = append(subCategoryID.Products, productID)
+			}
+
+			categoryID.SubCategories = append(categoryID.SubCategories, subCategoryID)
+		}
+
+		result = append(result, categoryID)
+	}
+
+	return result, nil
 }
 
 func (uc *SellerUsecase) CreateOffer(ctx context.Context, input dto.CreateOfferInput, sellerID int64) (*dto.CreateOfferOutput, error) {

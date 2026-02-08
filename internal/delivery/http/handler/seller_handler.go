@@ -48,6 +48,16 @@ func (h *SellerHandler) GetOffers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, output)
 }
 
+func (h *SellerHandler) GetExistProducts(ctx *gin.Context) {
+	products, err := h.uc.GetAllExistProducts(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, products)
+}
+
 func (h *SellerHandler) CreateOffer(ctx *gin.Context) {
 	uid, ok := extractUserID(ctx)
 	if !ok {

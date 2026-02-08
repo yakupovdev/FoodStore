@@ -75,7 +75,7 @@ func main() {
 	authUsecase, _ := usecase.NewAuthUsecase(userRepo, tokenRepo, tokenSvc)
 	recoveryUsecase, _ := usecase.NewRecoveryUsecase(userRepo, recoveryCodeRepo, codeHasher, tokenSvc, codeGen, emailSender)
 	clientUsecase, _ := usecase.NewClientUsecase(clientRepo, orderRepo, productRepo, sellerRepo)
-	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo)
+	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo, productRepo)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authUsecase)

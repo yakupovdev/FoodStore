@@ -22,6 +22,7 @@ var (
 	ErrModerationCategoriesSchema   = errors.New("moderation categories schema error")
 	ErrModerationProductsSchema     = errors.New("moderation products schema error")
 	ErrModerationSellerOffersSchema = errors.New("moderation seller offers schema error")
+	ErrCategoriesAdd                = errors.New("categories add error")
 )
 
 func InitSchema(ctx context.Context, conn *pg.Conn) error {
@@ -65,6 +66,9 @@ func InitSchema(ctx context.Context, conn *pg.Conn) error {
 		return err
 	}
 	if err := ensureModerationSellerOffersSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureCategoriesForTest(ctx, conn); err != nil {
 		return err
 	}
 	return nil
@@ -288,5 +292,35 @@ CREATE TABLE IF NOT EXISTS moderation_seller_offers (
 	if err != nil {
 		return ErrModerationSellerOffersSchema
 	}
+	return nil
+}
+
+func ensureCategoriesForTest(ctx context.Context, conn *pg.Conn) error {
+	stmt := []string{
+		`INSERT INTO categories (name, parent_id) VALUES('Milk,cheese and eggs',NULL);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Meat and poultry',NULL);`,
+		`INSERT INTO categories (name, parent_id)VALUES('Fish and products',NULL);`,
+
+		`INSERT INTO categories (name, parent_id) VALUES('Milk, cream, condensed milk',1);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Kefir, cottage cheese, sour cream',1);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Yogurts, cottage cheese and desserts',1);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Eggs, butter, margarine',1);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Cheese',1);`,
+
+		`INSERT INTO categories (name, parent_id) VALUES('Meat, steaks, minced meat',2);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Chicken, turkey, and poultry',2);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Semi-finished products and marinades',2);`,
+
+		`INSERT INTO categories (name, parent_id) VALUES('Fish',3);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Seafood',3);`,
+		`INSERT INTO categories (name, parent_id) VALUES('Caviar and snacks',3);`,
+	}
+
+	for _, s := range stmt {
+		if _, err := conn.Exec(ctx, s); err != nil {
+			return ErrCategoriesAdd
+		}
+	}
+
 	return nil
 }

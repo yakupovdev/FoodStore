@@ -157,3 +157,7 @@ func (r *SellerRepo) CreateOffer(ctx context.Context, params *entity.CreateOffer
 
 	return tx.Commit(ctx)
 }
+
+//func (r *SellerRepo) CreateOffersByExistProducts(ctx context.Context, params *entity.CreateOfferParams) error {
+//
+//}
