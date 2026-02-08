@@ -4,18 +4,20 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
 	"time"
 
-	"os"
-
 	"github.com/joho/godotenv"
-	"github.com/yakupovdev/FoodStore/internal/controller"
-	"github.com/yakupovdev/FoodStore/internal/repository"
-	"github.com/yakupovdev/FoodStore/internal/router"
-	"github.com/yakupovdev/FoodStore/internal/storage"
+	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres/impl"
+	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres/initializationdb"
+
+	httpdelivery "github.com/yakupovdev/FoodStore/internal/delivery/http"
+	"github.com/yakupovdev/FoodStore/internal/delivery/http/handler"
+	"github.com/yakupovdev/FoodStore/internal/infrastructure/email"
+	"github.com/yakupovdev/FoodStore/internal/infrastructure/security"
 	"github.com/yakupovdev/FoodStore/internal/usecase"
 )
 
@@ -23,67 +25,79 @@ func main() {
 	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel()
 
-	// DB
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading ..env file")
+		log.Fatal("Error loading .env file")
 	}
-	Database := os.Getenv("DATABASE")
-	Host := os.Getenv("HOST")
-	PortBefore := os.Getenv("PORT")
-	Port, _ := strconv.ParseUint(PortBefore, 10, 16)
-	Username := os.Getenv("USER")
-	Password := os.Getenv("PASSWORD")
+	database := os.Getenv("DATABASE")
+	host := os.Getenv("HOST")
+	portStr := os.Getenv("PORT")
+	port, _ := strconv.ParseUint(portStr, 10, 16)
+	username := os.Getenv("USER")
+	password := os.Getenv("PASSWORD")
 
-	conn, err := storage.NewPostgresDB(appCtx, storage.Config{
-		Database: Database,
-		Host:     Host,
-		Port:     uint16(Port),
-		Username: Username,
-		Password: Password,
+	conn, err := initializationdb.NewConnection(appCtx, initializationdb.Config{
+		Database: database,
+		Host:     host,
+		Port:     uint16(port),
+		Username: username,
+		Password: password,
 	})
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close(appCtx)
 
-	if err := storage.InitSchema(appCtx, conn); err != nil {
+	if err := initializationdb.InitSchema(appCtx, conn); err != nil {
 		panic(err)
 	}
 
 	// Repository
-	userRepo := repository.NewPostgres(conn)
-	clientRepo := repository.NewOrdersRepo(conn)
-	sellerRepo := repository.NewSellerRepository(conn)
+	userRepo := impl.NewUserRepo(conn)
+	tokenRepo := impl.NewTokenRepo(conn)
+	recoveryCodeRepo := impl.NewRecoveryCodeRepo(conn)
+	clientRepo := impl.NewClientRepo(conn)
+	orderRepo := impl.NewOrderRepo(conn)
+	productRepo := impl.NewProductRepo(conn)
+	sellerRepo := impl.NewSellerRepo(conn)
+
+	// Services
+	codeHasher := security.NewSHA256CodeHasher()
+	tokenSvc := security.NewJWTService()
+	codeGen := security.NewRandomCodeGenerator()
+	emailSender := email.NewSMTPSender(
+		os.Getenv("EMAIL_SENDER"),
+		os.Getenv("EMAIL_PASSWORD"),
+		os.Getenv("EMAIL_HOST"),
+		os.Getenv("EMAIL_PORT"),
+	)
 
 	// Usecases
-	authUsecase, _ := usecase.NewAuthUsecase(userRepo)
-	emailUsecase, _ := usecase.NewEmailUsecase(userRepo)
-	recoveryUsecase, _ := usecase.NewRecoveryUsecase(userRepo)
-	refreshAccessTokenUsecase, _ := usecase.NewRefreshAccessTokenUsecase(userRepo)
-	chechTokenIsValidUsecase, _ := usecase.NewCheckTokenIsValidUsecase(userRepo)
-	clientUsecase, _ := usecase.NewClientUsecase(clientRepo, sellerRepo)
+	authUsecase, _ := usecase.NewAuthUsecase(userRepo, tokenRepo, tokenSvc)
+	recoveryUsecase, _ := usecase.NewRecoveryUsecase(userRepo, recoveryCodeRepo, codeHasher, tokenSvc, codeGen, emailSender)
+	clientUsecase, _ := usecase.NewClientUsecase(clientRepo, orderRepo, productRepo, sellerRepo)
 	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo)
 
-	// Controllers
-	authController := controller.NewAuthController(authUsecase)
-	emailController := controller.NewEmailController(emailUsecase)
-	recoveryController := controller.NewRecoveryController(recoveryUsecase)
-	refreshAccessTokenController := controller.NewRefreshAccessTokenController(refreshAccessTokenUsecase)
-	clientController := controller.NewClientController(clientUsecase)
-	sellerController := controller.NewSellerController(sellerUsecase)
+	// Handlers
+	authHandler := handler.NewAuthHandler(authUsecase)
+	emailHandler := handler.NewEmailHandler(recoveryUsecase)
+	recoveryHandler := handler.NewRecoveryHandler(recoveryUsecase)
+	refreshTokenHandler := handler.NewRefreshTokenHandler(authUsecase)
+	clientHandler := handler.NewClientHandler(clientUsecase)
+	sellerHandler := handler.NewSellerHandler(sellerUsecase)
 
 	// Router
-	r := router.SetupRouter(router.Deps{
-		AuthController:               authController,
-		EmailController:              emailController,
-		RecoveryController:           recoveryController,
-		RefreshAccessTokenController: refreshAccessTokenController,
-		CheckTokenIsValidUsecase:     chechTokenIsValidUsecase,
-		ClientController:             clientController,
-		SellerController:             sellerController,
+	r := httpdelivery.SetupRouter(httpdelivery.RouterDeps{
+		AuthHandler:         authHandler,
+		EmailHandler:        emailHandler,
+		RecoveryHandler:     recoveryHandler,
+		RefreshTokenHandler: refreshTokenHandler,
+		ClientHandler:       clientHandler,
+		SellerHandler:       sellerHandler,
+		TokenValidator:      authUsecase,
+		TokenService:        tokenSvc,
 	})
 
-	// HTTP Server
+	// Server
 	srv := &http.Server{
 		Addr:         ":9000",
 		Handler:      r,
@@ -92,7 +106,6 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// Run Server
 	go func() {
 		log.Println("Starting server on :9000")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -111,7 +124,7 @@ func main() {
 				log.Println("background cleanup stopped")
 				return
 			case <-ticker.C:
-				if err := userRepo.DeleteExpiredAccessTokens(); err != nil {
+				if err := authUsecase.DeleteExpiredTokens(appCtx); err != nil {
 					log.Printf("Error deleting expired access tokens: %v", err)
 				} else {
 					log.Println("Expired access tokens deleted successfully")
@@ -120,17 +133,15 @@ func main() {
 		}
 	}()
 
-	// GRACEFUL SHUTDOWN
+	// Gracefully shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	log.Println("shutting down server...")
 
-	// остановить фоновые задачи
 	appCancel()
 
-	// отдельный контекст только для Shutdown
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
