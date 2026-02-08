@@ -59,6 +59,7 @@ func main() {
 	orderRepo := impl.NewOrderRepo(conn)
 	productRepo := impl.NewProductRepo(conn)
 	sellerRepo := impl.NewSellerRepo(conn)
+	transactionRepo := impl.NewTransactionRepository(conn)
 
 	// Services
 	codeHasher := security.NewSHA256CodeHasher()
@@ -74,7 +75,7 @@ func main() {
 	// Usecases
 	authUsecase, _ := usecase.NewAuthUsecase(userRepo, tokenRepo, tokenSvc)
 	recoveryUsecase, _ := usecase.NewRecoveryUsecase(userRepo, recoveryCodeRepo, codeHasher, tokenSvc, codeGen, emailSender)
-	clientUsecase, _ := usecase.NewClientUsecase(clientRepo, orderRepo, productRepo, sellerRepo)
+	clientUsecase, _ := usecase.NewClientUsecase(clientRepo, orderRepo, productRepo, sellerRepo, transactionRepo)
 	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo)
 
 	// Handlers
