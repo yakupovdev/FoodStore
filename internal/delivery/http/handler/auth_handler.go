@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/yakupovdev/FoodStore/internal/delivery/http/dto"
 	"github.com/yakupovdev/FoodStore/internal/domain"
 	"github.com/yakupovdev/FoodStore/internal/usecase"
-	"github.com/yakupovdev/FoodStore/internal/usecase/dto"
 )
 
 type AuthHandler struct {
@@ -32,7 +32,7 @@ func (h *AuthHandler) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	if lowerUserType := strings.ToLower(req.UserType); lowerUserType != "client" && lowerUserType != "seller" {
+	if lowerUserType := strings.ToLower(req.UserType); lowerUserType != "client" && lowerUserType != "seller" && lowerUserType != "moderator" {
 		ctx.JSON(ErrInvalidUserType.Status, ErrInvalidUserType.Response)
 		return
 	}

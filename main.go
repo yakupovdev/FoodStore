@@ -11,11 +11,12 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres/impl"
+	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres/initializationdb"
 
 	httpdelivery "github.com/yakupovdev/FoodStore/internal/delivery/http"
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/handler"
 	"github.com/yakupovdev/FoodStore/internal/infrastructure/email"
-	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres"
 	"github.com/yakupovdev/FoodStore/internal/infrastructure/security"
 	"github.com/yakupovdev/FoodStore/internal/usecase"
 )
@@ -34,7 +35,7 @@ func main() {
 	username := os.Getenv("USER")
 	password := os.Getenv("PASSWORD")
 
-	conn, err := postgres.NewConnection(appCtx, postgres.Config{
+	conn, err := initializationdb.NewConnection(appCtx, initializationdb.Config{
 		Database: database,
 		Host:     host,
 		Port:     uint16(port),
@@ -46,33 +47,37 @@ func main() {
 	}
 	defer conn.Close(appCtx)
 
-	if err := postgres.InitSchema(appCtx, conn); err != nil {
+	if err := initializationdb.InitSchema(appCtx, conn); err != nil {
 		panic(err)
 	}
 
-	userRepo := postgres.NewUserRepo(conn)
-	tokenRepo := postgres.NewTokenRepo(conn)
-	recoveryCodeRepo := postgres.NewRecoveryCodeRepo(conn)
-	clientRepo := postgres.NewClientRepo(conn)
-	orderRepo := postgres.NewOrderRepo(conn)
-	productRepo := postgres.NewProductRepo(conn)
-	sellerRepo := postgres.NewSellerRepo(conn)
+	// Repository
+	userRepo := impl.NewUserRepo(conn)
+	tokenRepo := impl.NewTokenRepo(conn)
+	recoveryCodeRepo := impl.NewRecoveryCodeRepo(conn)
+	clientRepo := impl.NewClientRepo(conn)
+	orderRepo := impl.NewOrderRepo(conn)
+	productRepo := impl.NewProductRepo(conn)
+	sellerRepo := impl.NewSellerRepo(conn)
 
+	// Services
 	codeHasher := security.NewSHA256CodeHasher()
 	tokenSvc := security.NewJWTService()
 	codeGen := security.NewRandomCodeGenerator()
 	emailSender := email.NewSMTPSender(
-		"foodstorewwgo@gmail.com",
-		"dkeywmbvieuiuazj",
-		"smtp.gmail.com",
-		"587",
+		os.Getenv("EMAIL_SENDER"),
+		os.Getenv("EMAIL_PASSWORD"),
+		os.Getenv("EMAIL_HOST"),
+		os.Getenv("EMAIL_PORT"),
 	)
 
+	// Usecases
 	authUsecase, _ := usecase.NewAuthUsecase(userRepo, tokenRepo, tokenSvc)
 	recoveryUsecase, _ := usecase.NewRecoveryUsecase(userRepo, recoveryCodeRepo, codeHasher, tokenSvc, codeGen, emailSender)
 	clientUsecase, _ := usecase.NewClientUsecase(clientRepo, orderRepo, productRepo, sellerRepo)
 	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo)
 
+	// Handlers
 	authHandler := handler.NewAuthHandler(authUsecase)
 	emailHandler := handler.NewEmailHandler(recoveryUsecase)
 	recoveryHandler := handler.NewRecoveryHandler(recoveryUsecase)
@@ -80,6 +85,7 @@ func main() {
 	clientHandler := handler.NewClientHandler(clientUsecase)
 	sellerHandler := handler.NewSellerHandler(sellerUsecase)
 
+	// Router
 	r := httpdelivery.SetupRouter(httpdelivery.RouterDeps{
 		AuthHandler:         authHandler,
 		EmailHandler:        emailHandler,
@@ -91,6 +97,7 @@ func main() {
 		TokenService:        tokenSvc,
 	})
 
+	// Server
 	srv := &http.Server{
 		Addr:         ":9000",
 		Handler:      r,
@@ -106,6 +113,7 @@ func main() {
 		}
 	}()
 
+	// Background task
 	go func() {
 		ticker := time.NewTicker(10 * time.Minute)
 		defer ticker.Stop()
@@ -125,6 +133,7 @@ func main() {
 		}
 	}()
 
+	// Gracefully shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

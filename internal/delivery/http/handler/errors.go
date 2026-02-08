@@ -1,6 +1,8 @@
 package handler
 
-import "github.com/yakupovdev/FoodStore/internal/usecase/dto"
+import (
+	"github.com/yakupovdev/FoodStore/internal/delivery/http/dto"
+)
 
 type HTTPError struct {
 	Status   int

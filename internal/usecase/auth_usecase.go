@@ -3,13 +3,14 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
+	"github.com/yakupovdev/FoodStore/internal/delivery/http/dto"
 	"github.com/yakupovdev/FoodStore/internal/domain"
 	"github.com/yakupovdev/FoodStore/internal/domain/entity"
 	"github.com/yakupovdev/FoodStore/internal/domain/repository"
 	"github.com/yakupovdev/FoodStore/internal/domain/service"
-	"github.com/yakupovdev/FoodStore/internal/usecase/dto"
 )
 
 type TokenValidator interface {
@@ -40,6 +41,7 @@ func NewAuthUsecase(
 func (uc *AuthUsecase) Register(ctx context.Context, input dto.RegisterInput) (*dto.RegisterOutput, error) {
 	exists, err := uc.userRepo.ExistsByEmailAndType(ctx, input.Email, input.UserType)
 	if err != nil {
+		log.Printf("check user existence: %v", err)
 		return nil, fmt.Errorf("check user existence: %w", err)
 	}
 	if exists {
@@ -48,10 +50,12 @@ func (uc *AuthUsecase) Register(ctx context.Context, input dto.RegisterInput) (*
 
 	user, err := entity.NewUser(input.Email, input.Password, input.UserType, input.Name, input.Balance)
 	if err != nil {
+		log.Printf("create user entity: %v", err)
 		return nil, fmt.Errorf("create user: %w", err)
 	}
 
 	if _, err = uc.userRepo.Create(ctx, user); err != nil {
+		log.Printf("create user in db: %v", err)
 		return nil, fmt.Errorf("persist user: %w", err)
 	}
 

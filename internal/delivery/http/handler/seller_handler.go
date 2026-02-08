@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/yakupovdev/FoodStore/internal/delivery/http/dto"
 	"github.com/yakupovdev/FoodStore/internal/usecase"
-	"github.com/yakupovdev/FoodStore/internal/usecase/dto"
 )
 
 type SellerHandler struct {

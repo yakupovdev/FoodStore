@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	dto2 "github.com/yakupovdev/FoodStore/internal/delivery/http/dto"
 	"github.com/yakupovdev/FoodStore/internal/domain"
 	"github.com/yakupovdev/FoodStore/internal/domain/repository"
-	"github.com/yakupovdev/FoodStore/internal/usecase/dto"
 )
 
 type ClientUsecase struct {
@@ -33,13 +33,13 @@ func NewClientUsecase(
 	}, nil
 }
 
-func (uc *ClientUsecase) GetProfileByID(ctx context.Context, clientID int64, userType string) (*dto.ClientProfileOutput, error) {
+func (uc *ClientUsecase) GetProfileByID(ctx context.Context, clientID int64, userType string) (*dto2.ClientProfileOutput, error) {
 	client, err := uc.clientRepo.FindByID(ctx, clientID)
 	if err != nil {
 		return nil, fmt.Errorf("get client profile: %w", err)
 	}
 
-	return &dto.ClientProfileOutput{
+	return &dto2.ClientProfileOutput{
 		ID:       client.ID,
 		Name:     client.Name,
 		Email:    client.Email,
@@ -49,22 +49,22 @@ func (uc *ClientUsecase) GetProfileByID(ctx context.Context, clientID int64, use
 	}, nil
 }
 
-func (uc *ClientUsecase) GetOrdersByClientID(ctx context.Context, clientID int64) ([]dto.ClientOrderOutput, error) {
+func (uc *ClientUsecase) GetOrdersByClientID(ctx context.Context, clientID int64) ([]dto2.ClientOrderOutput, error) {
 	orders, err := uc.orderRepo.FindByClientID(ctx, clientID)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []dto.ClientOrderOutput
+	var result []dto2.ClientOrderOutput
 	for _, order := range orders {
 		items, err := uc.orderRepo.FindItemsByOrderID(ctx, order.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		var itemDTOs []dto.ClientOrderItemDTO
+		var itemDTOs []dto2.ClientOrderItemDTO
 		for _, item := range items {
-			itemDTOs = append(itemDTOs, dto.ClientOrderItemDTO{
+			itemDTOs = append(itemDTOs, dto2.ClientOrderItemDTO{
 				OrderItemsID:    item.ID,
 				OrderID:         item.OrderID,
 				SellerID:        item.SellerID,
@@ -74,7 +74,7 @@ func (uc *ClientUsecase) GetOrdersByClientID(ctx context.Context, clientID int64
 			})
 		}
 
-		result = append(result, dto.ClientOrderOutput{
+		result = append(result, dto2.ClientOrderOutput{
 			OrderID:   order.ID,
 			ClientID:  order.ClientID,
 			Status:    order.Status,
@@ -86,36 +86,36 @@ func (uc *ClientUsecase) GetOrdersByClientID(ctx context.Context, clientID int64
 	return result, nil
 }
 
-func (uc *ClientUsecase) GetProducts(ctx context.Context) ([]dto.CategoryOutput, error) {
+func (uc *ClientUsecase) GetProducts(ctx context.Context) ([]dto2.CategoryOutput, error) {
 	categories, err := uc.productRepo.GetCategories(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []dto.CategoryOutput
+	var result []dto2.CategoryOutput
 	for _, category := range categories {
 		subCategories, err := uc.productRepo.GetSubCategories(ctx, category.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		var subCatDTOs []dto.SubCategoryOutput
+		var subCatDTOs []dto2.SubCategoryOutput
 		for _, subCat := range subCategories {
 			products, err := uc.productRepo.GetProductsBySubCategoryID(ctx, subCat.ID)
 			if err != nil {
 				return nil, err
 			}
 
-			var productDTOs []dto.ProductOutput
+			var productDTOs []dto2.ProductOutput
 			for _, product := range products {
 				offers, err := uc.sellerRepo.GetOffersByProductID(ctx, product.ID)
 				if err != nil {
 					return nil, err
 				}
 
-				var offerDTOs []dto.SellerOfferOutput
+				var offerDTOs []dto2.SellerOfferOutput
 				for _, offer := range offers {
-					offerDTOs = append(offerDTOs, dto.SellerOfferOutput{
+					offerDTOs = append(offerDTOs, dto2.SellerOfferOutput{
 						SellerID:   offer.SellerID,
 						SellerName: offer.SellerName,
 						Price:      offer.Price,
@@ -123,7 +123,7 @@ func (uc *ClientUsecase) GetProducts(ctx context.Context) ([]dto.CategoryOutput,
 					})
 				}
 
-				productDTOs = append(productDTOs, dto.ProductOutput{
+				productDTOs = append(productDTOs, dto2.ProductOutput{
 					ProductID:   product.ID,
 					Name:        product.Name,
 					Description: product.Description,
@@ -132,13 +132,13 @@ func (uc *ClientUsecase) GetProducts(ctx context.Context) ([]dto.CategoryOutput,
 				})
 			}
 
-			subCatDTOs = append(subCatDTOs, dto.SubCategoryOutput{
+			subCatDTOs = append(subCatDTOs, dto2.SubCategoryOutput{
 				Name:     subCat.Name,
 				Products: productDTOs,
 			})
 		}
 
-		result = append(result, dto.CategoryOutput{
+		result = append(result, dto2.CategoryOutput{
 			Name:          category.Name,
 			SubCategories: subCatDTOs,
 		})

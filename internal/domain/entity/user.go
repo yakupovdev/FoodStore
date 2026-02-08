@@ -27,7 +27,7 @@ func NewUser(email, password, userType, name string, balance int64) (*User, erro
 	if password == "" {
 		return nil, domain.ErrEmptyPassword
 	}
-	if userType != "client" && userType != "seller" {
+	if userType != "client" && userType != "seller" && userType != "moderator" {
 		return nil, domain.ErrInvalidUserType
 	}
 	if name == "" {
@@ -74,12 +74,4 @@ func RestoreUser(id int64, email, passwordHash, userType, name string, balance i
 
 func (u *User) CheckPassword(password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)) == nil
-}
-
-func (u *User) IsClient() bool {
-	return u.UserType == "client"
-}
-
-func (u *User) IsSeller() bool {
-	return u.UserType == "seller"
 }

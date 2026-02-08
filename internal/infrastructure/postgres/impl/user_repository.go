@@ -1,4 +1,4 @@
-package postgres
+package impl
 
 import (
 	"context"
@@ -35,19 +35,21 @@ func (r *UserRepo) Create(ctx context.Context, user *entity.User) (int64, error)
 		return 0, fmt.Errorf("failed to insert into users: %w", err)
 	}
 
-	var secondaryStmt string
-	switch user.UserType {
-	case "client":
-		secondaryStmt = `INSERT INTO clients (client_id, name) VALUES ($1, $2)`
-	case "seller":
-		secondaryStmt = `INSERT INTO sellers (seller_id, name) VALUES ($1, $2)`
-	default:
-		return 0, fmt.Errorf("unknown user type: %s", user.UserType)
-	}
+	if user.UserType != "moderator" {
+		var secondaryStmt string
+		switch user.UserType {
+		case "client":
+			secondaryStmt = `INSERT INTO clients (client_id, name) VALUES ($1, $2)`
+		case "seller":
+			secondaryStmt = `INSERT INTO sellers (seller_id, name) VALUES ($1, $2)`
+		default:
+			return 0, fmt.Errorf("unknown user type: %s", user.UserType)
+		}
 
-	_, err = tx.Exec(ctx, secondaryStmt, userID, user.Name)
-	if err != nil {
-		return 0, fmt.Errorf("failed to insert into %s: %w", user.UserType, err)
+		_, err = tx.Exec(ctx, secondaryStmt, userID, user.Name)
+		if err != nil {
+			return 0, fmt.Errorf("failed to insert into %s: %w", user.UserType, err)
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {

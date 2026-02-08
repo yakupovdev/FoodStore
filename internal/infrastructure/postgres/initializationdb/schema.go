@@ -1,4 +1,4 @@
-package postgres
+package initializationdb
 
 import (
 	"context"
@@ -8,17 +8,19 @@ import (
 )
 
 var (
-	ErrUsersSchema         = errors.New("users schema error")
-	ErrRecoveryCodesSchema = errors.New("recovery codes schema error")
-	ErrWhitelistSchema     = errors.New("whitelist schema error")
-	ErrBlacklistSchema     = errors.New("blacklist schema error")
-	ErrCategoriesSchema    = errors.New("categories schema error")
-	ErrProductsSchema      = errors.New("products schema error")
-	ErrClientsSchema       = errors.New("clients schema error")
-	ErrSellersSchema       = errors.New("sellers schema error")
-	ErrSellerOffersSchema  = errors.New("seller offers schema error")
-	ErrOrdersSchema        = errors.New("orders schema error")
-	ErrOrdersItemsSchema   = errors.New("orders items schema error")
+	ErrUsersSchema                = errors.New("users schema error")
+	ErrRecoveryCodesSchema        = errors.New("recovery codes schema error")
+	ErrWhitelistSchema            = errors.New("whitelist schema error")
+	ErrBlacklistSchema            = errors.New("blacklist schema error")
+	ErrCategoriesSchema           = errors.New("categories schema error")
+	ErrProductsSchema             = errors.New("products schema error")
+	ErrClientsSchema              = errors.New("clients schema error")
+	ErrSellersSchema              = errors.New("sellers schema error")
+	ErrSellerOffersSchema         = errors.New("seller offers schema error")
+	ErrOrdersSchema               = errors.New("orders schema error")
+	ErrOrdersItemsSchema          = errors.New("orders items schema error")
+	ErrModerationCategoriesSchema = errors.New("moderation categories schema error")
+	ErrModerationProductsSchema   = errors.New("moderation products schema error")
 )
 
 func InitSchema(ctx context.Context, conn *pg.Conn) error {
@@ -53,6 +55,12 @@ func InitSchema(ctx context.Context, conn *pg.Conn) error {
 		return err
 	}
 	if err := ensureOrdersItemsSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureModerationCategoriesSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureModerationProductsSchema(ctx, conn); err != nil {
 		return err
 	}
 	return nil
@@ -165,6 +173,7 @@ func ensureClientsSchema(ctx context.Context, conn *pg.Conn) error {
 CREATE TABLE IF NOT EXISTS clients (
     client_id BIGINT PRIMARY KEY REFERENCES users(userid) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
+    address VARCHAR(255),
     rating NUMERIC(3,2) DEFAULT 0
 );`)
 	if err != nil {
@@ -178,6 +187,8 @@ func ensureSellersSchema(ctx context.Context, conn *pg.Conn) error {
 CREATE TABLE IF NOT EXISTS sellers (
     seller_id BIGINT PRIMARY KEY REFERENCES users(userid) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
+    address VARCHAR(255),
+    priority INT DEFAULT 0,
     rating NUMERIC(3,2) DEFAULT 0
 );`)
 	if err != nil {
@@ -228,6 +239,35 @@ CREATE TABLE IF NOT EXISTS orders_items (
 );`)
 	if err != nil {
 		return ErrOrdersItemsSchema
+	}
+	return nil
+}
+
+func ensureModerationCategoriesSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS moderation_categories (
+    moderation_categories_id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    moderation_parent_id BIGINT REFERENCES moderation_categories(moderation_categories_id) ON DELETE SET NULL
+);`)
+	if err != nil {
+		return ErrModerationCategoriesSchema
+	}
+	return nil
+}
+
+func ensureModerationProductsSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS moderation_products (
+    moderation_product_id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    moderation_categories_id BIGINT NOT NULL REFERENCES moderation_categories(moderation_categories_id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    img VARCHAR(255)
+);`)
+	if err != nil {
+		return ErrModerationProductsSchema
 	}
 	return nil
 }

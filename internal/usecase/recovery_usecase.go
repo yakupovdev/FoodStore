@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/yakupovdev/FoodStore/internal/delivery/http/dto"
 	"github.com/yakupovdev/FoodStore/internal/domain"
 	"github.com/yakupovdev/FoodStore/internal/domain/entity"
 	"github.com/yakupovdev/FoodStore/internal/domain/repository"
 	"github.com/yakupovdev/FoodStore/internal/domain/service"
-	"github.com/yakupovdev/FoodStore/internal/usecase/dto"
 )
 
 type RecoveryUsecase struct {
