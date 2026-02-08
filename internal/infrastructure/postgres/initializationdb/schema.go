@@ -8,19 +8,20 @@ import (
 )
 
 var (
-	ErrUsersSchema                = errors.New("users schema error")
-	ErrRecoveryCodesSchema        = errors.New("recovery codes schema error")
-	ErrWhitelistSchema            = errors.New("whitelist schema error")
-	ErrBlacklistSchema            = errors.New("blacklist schema error")
-	ErrCategoriesSchema           = errors.New("categories schema error")
-	ErrProductsSchema             = errors.New("products schema error")
-	ErrClientsSchema              = errors.New("clients schema error")
-	ErrSellersSchema              = errors.New("sellers schema error")
-	ErrSellerOffersSchema         = errors.New("seller offers schema error")
-	ErrOrdersSchema               = errors.New("orders schema error")
-	ErrOrdersItemsSchema          = errors.New("orders items schema error")
-	ErrModerationCategoriesSchema = errors.New("moderation categories schema error")
-	ErrModerationProductsSchema   = errors.New("moderation products schema error")
+	ErrUsersSchema                  = errors.New("users schema error")
+	ErrRecoveryCodesSchema          = errors.New("recovery codes schema error")
+	ErrWhitelistSchema              = errors.New("whitelist schema error")
+	ErrBlacklistSchema              = errors.New("blacklist schema error")
+	ErrCategoriesSchema             = errors.New("categories schema error")
+	ErrProductsSchema               = errors.New("products schema error")
+	ErrClientsSchema                = errors.New("clients schema error")
+	ErrSellersSchema                = errors.New("sellers schema error")
+	ErrSellerOffersSchema           = errors.New("seller offers schema error")
+	ErrOrdersSchema                 = errors.New("orders schema error")
+	ErrOrdersItemsSchema            = errors.New("orders items schema error")
+	ErrModerationCategoriesSchema   = errors.New("moderation categories schema error")
+	ErrModerationProductsSchema     = errors.New("moderation products schema error")
+	ErrModerationSellerOffersSchema = errors.New("moderation seller offers schema error")
 )
 
 func InitSchema(ctx context.Context, conn *pg.Conn) error {
@@ -61,6 +62,9 @@ func InitSchema(ctx context.Context, conn *pg.Conn) error {
 		return err
 	}
 	if err := ensureModerationProductsSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureModerationSellerOffersSchema(ctx, conn); err != nil {
 		return err
 	}
 	return nil
@@ -268,6 +272,21 @@ CREATE TABLE IF NOT EXISTS moderation_products (
 );`)
 	if err != nil {
 		return ErrModerationProductsSchema
+	}
+	return nil
+}
+
+func ensureModerationSellerOffersSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS moderation_seller_offers (
+    seller_id BIGINT NOT NULL REFERENCES sellers(seller_id) ON DELETE CASCADE,
+    moderation_product_id BIGINT NOT NULL REFERENCES moderation_products(moderation_product_id) ON DELETE CASCADE,
+    price BIGINT NOT NULL,
+    quantity INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (seller_id, moderation_product_id)
+);`)
+	if err != nil {
+		return ErrModerationSellerOffersSchema
 	}
 	return nil
 }
