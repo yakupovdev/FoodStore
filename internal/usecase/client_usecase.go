@@ -1,136 +1,148 @@
 package usecase
 
 import (
-	"github.com/yakupovdev/FoodStore/internal/model"
-	"github.com/yakupovdev/FoodStore/internal/repository"
+	"context"
+	"fmt"
+
+	"github.com/yakupovdev/FoodStore/internal/domain"
+	"github.com/yakupovdev/FoodStore/internal/domain/repository"
+	"github.com/yakupovdev/FoodStore/internal/usecase/dto"
 )
 
 type ClientUsecase struct {
-	repo  *repository.OrdersRepo
-	repos *repository.SellerRepository
+	clientRepo  repository.ClientRepository
+	orderRepo   repository.OrderRepository
+	productRepo repository.ProductRepository
+	sellerRepo  repository.SellerRepository
 }
 
-func NewClientUsecase(repo *repository.OrdersRepo, repos *repository.SellerRepository) (*ClientUsecase, error) {
-	if repo == nil {
-		return nil, ErrDatabaseConnection
+func NewClientUsecase(
+	clientRepo repository.ClientRepository,
+	orderRepo repository.OrderRepository,
+	productRepo repository.ProductRepository,
+	sellerRepo repository.SellerRepository,
+) (*ClientUsecase, error) {
+	if clientRepo == nil || orderRepo == nil || productRepo == nil {
+		return nil, domain.ErrDatabaseConnection
 	}
-
 	return &ClientUsecase{
-		repo:  repo,
-		repos: repos,
+		clientRepo:  clientRepo,
+		orderRepo:   orderRepo,
+		productRepo: productRepo,
+		sellerRepo:  sellerRepo,
 	}, nil
 }
 
-func (ou *ClientUsecase) GetProfileByID(clientID int64) (model.Client, error) {
-	profile, err := ou.repo.GetProfileByID(clientID)
+func (uc *ClientUsecase) GetProfileByID(ctx context.Context, clientID int64, userType string) (*dto.ClientProfileOutput, error) {
+	client, err := uc.clientRepo.FindByID(ctx, clientID)
 	if err != nil {
-		return model.Client{}, err
+		return nil, fmt.Errorf("get client profile: %w", err)
 	}
-	return profile, nil
+
+	return &dto.ClientProfileOutput{
+		ID:       client.ID,
+		Name:     client.Name,
+		Email:    client.Email,
+		UserType: userType,
+		Balance:  client.Balance,
+		Rating:   client.Rating,
+	}, nil
 }
 
-func (ou *ClientUsecase) GetOrdersByClientID(clientID int64) ([]model.ClientOrdersDTO, error) {
-	orders, err := ou.repo.GetOrdersByClientID(clientID)
+func (uc *ClientUsecase) GetOrdersByClientID(ctx context.Context, clientID int64) ([]dto.ClientOrderOutput, error) {
+	orders, err := uc.orderRepo.FindByClientID(ctx, clientID)
 	if err != nil {
 		return nil, err
 	}
-	var detailedOrders []model.ClientOrdersDTO
-	var detailedOrderItems []model.ClientOrdersItemDTO
+
+	var result []dto.ClientOrderOutput
 	for _, order := range orders {
-		items, err := ou.repo.GetOrderItemsByOrderID(order.OrderID)
+		items, err := uc.orderRepo.FindItemsByOrderID(ctx, order.ID)
 		if err != nil {
 			return nil, err
 		}
+
+		var itemDTOs []dto.ClientOrderItemDTO
 		for _, item := range items {
-			detailedItem := model.ClientOrdersItemDTO{
-				OrderItemsId:    item.OrderItemsId,
+			itemDTOs = append(itemDTOs, dto.ClientOrderItemDTO{
+				OrderItemsID:    item.ID,
 				OrderID:         item.OrderID,
 				SellerID:        item.SellerID,
 				ProductID:       item.ProductID,
 				Quantity:        item.Quantity,
 				PriceAtPurchase: item.PriceAtPurchase,
-			}
-			detailedOrderItems = append(detailedOrderItems, detailedItem)
+			})
 		}
-		detailedOrder := model.ClientOrdersDTO{
-			OrderID:   order.OrderID,
+
+		result = append(result, dto.ClientOrderOutput{
+			OrderID:   order.ID,
 			ClientID:  order.ClientID,
 			Status:    order.Status,
 			CreatedAt: order.CreatedAt,
-			Items:     detailedOrderItems,
-		}
-		detailedOrders = append(detailedOrders, detailedOrder)
+			Items:     itemDTOs,
+		})
 	}
-	return detailedOrders, nil
+
+	return result, nil
 }
 
-func (ou *ClientUsecase) GetOrderItemsByOrderID(orderID int64) ([]model.ClientOrdersItems, error) {
-	items, err := ou.repo.GetOrderItemsByOrderID(orderID)
-	if err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-func (ou *ClientUsecase) GetProducts() ([]model.CategoryDTO, error) {
-	categories, err := ou.repo.GetCategories()
+func (uc *ClientUsecase) GetProducts(ctx context.Context) ([]dto.CategoryOutput, error) {
+	categories, err := uc.productRepo.GetCategories(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var categoriesDTO []model.CategoryDTO
+	var result []dto.CategoryOutput
 	for _, category := range categories {
-		subCategories, err := ou.repo.GetSubCategoriesByCategoryID(category.ID)
+		subCategories, err := uc.productRepo.GetSubCategories(ctx, category.ID)
 		if err != nil {
 			return nil, err
 		}
 
-		var subCategoriesDTO []model.SubCategoryDTO
-		for _, subCategory := range subCategories {
-			products, err := ou.repo.GetProductsBySubCategoryID(subCategory.ID)
+		var subCatDTOs []dto.SubCategoryOutput
+		for _, subCat := range subCategories {
+			products, err := uc.productRepo.GetProductsBySubCategoryID(ctx, subCat.ID)
 			if err != nil {
 				return nil, err
 			}
 
-			var productsDTO []model.ProductDTO
+			var productDTOs []dto.ProductOutput
 			for _, product := range products {
-				sellers, err := ou.repos.GetSellerOffersByProductID(product.ID)
+				offers, err := uc.sellerRepo.GetOffersByProductID(ctx, product.ID)
 				if err != nil {
 					return nil, err
 				}
-				var offersDTO []model.OfferDTO
-				for _, seller := range sellers {
-					offerDTO := model.OfferDTO{
-						SellerID:   seller.SellerID,
-						SellerName: seller.Name,
-						Price:      seller.Price,
-						Quantity:   seller.Quantity,
-					}
-					offersDTO = append(offersDTO, offerDTO)
+
+				var offerDTOs []dto.SellerOfferOutput
+				for _, offer := range offers {
+					offerDTOs = append(offerDTOs, dto.SellerOfferOutput{
+						SellerID:   offer.SellerID,
+						SellerName: offer.SellerName,
+						Price:      offer.Price,
+						Quantity:   offer.Quantity,
+					})
 				}
-				productDTO := model.ProductDTO{
+
+				productDTOs = append(productDTOs, dto.ProductOutput{
 					ProductID:   product.ID,
 					Name:        product.Name,
 					Description: product.Description,
 					Image:       product.Image,
-					Offers:      offersDTO,
-				}
-				productsDTO = append(productsDTO, productDTO)
+					Offers:      offerDTOs,
+				})
 			}
 
-			subCategoryDTO := model.SubCategoryDTO{
-				Name:     subCategory.Name,
-				Products: productsDTO,
-			}
-			subCategoriesDTO = append(subCategoriesDTO, subCategoryDTO)
+			subCatDTOs = append(subCatDTOs, dto.SubCategoryOutput{
+				Name:     subCat.Name,
+				Products: productDTOs,
+			})
 		}
 
-		categoryDTO := model.CategoryDTO{
-			Name:        category.Name,
-			SubCategory: subCategoriesDTO,
-		}
-		categoriesDTO = append(categoriesDTO, categoryDTO)
+		result = append(result, dto.CategoryOutput{
+			Name:          category.Name,
+			SubCategories: subCatDTOs,
+		})
 	}
 
-	return categoriesDTO, nil
+	return result, nil
 }

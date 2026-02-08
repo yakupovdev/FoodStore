@@ -1,64 +1,92 @@
 package usecase
 
 import (
-	"github.com/yakupovdev/FoodStore/internal/model"
-	"github.com/yakupovdev/FoodStore/internal/repository"
+	"context"
+	"fmt"
+
+	"github.com/yakupovdev/FoodStore/internal/domain"
+	"github.com/yakupovdev/FoodStore/internal/domain/entity"
+	"github.com/yakupovdev/FoodStore/internal/domain/repository"
+	"github.com/yakupovdev/FoodStore/internal/usecase/dto"
 )
 
 type SellerUsecase struct {
-	repo *repository.SellerRepository
+	sellerRepo repository.SellerRepository
 }
 
-func NewSellerUsecase(repo *repository.SellerRepository) (*SellerUsecase, error) {
-	if repo == nil {
-		return nil, ErrDatabaseConnection
+func NewSellerUsecase(sellerRepo repository.SellerRepository) (*SellerUsecase, error) {
+	if sellerRepo == nil {
+		return nil, domain.ErrDatabaseConnection
 	}
 	return &SellerUsecase{
-		repo: repo,
+		sellerRepo: sellerRepo,
 	}, nil
 }
 
-func (uc *SellerUsecase) GetProfileByID(userID int64) (model.SellerProfileResponse, error) {
-	seller, err := uc.repo.GetSellerProfile(userID)
+func (uc *SellerUsecase) GetProfileByID(ctx context.Context, userID int64) (*dto.SellerProfileOutput, error) {
+	seller, err := uc.sellerRepo.FindByUserID(ctx, userID)
 	if err != nil {
-		return model.SellerProfileResponse{}, err
+		return nil, fmt.Errorf("get seller profile: %w", err)
 	}
 
-	return model.SellerProfileResponse{
+	return &dto.SellerProfileOutput{
 		Name:    seller.Name,
 		Email:   seller.Email,
-		Type:    seller.Type,
+		Type:    "seller",
 		Balance: seller.Balance,
 		Rating:  seller.Rating,
 	}, nil
-
 }
 
-func (uc *SellerUsecase) GetSellerOffersByID(userID int64) (model.SellerOffersResponse, error) {
-	offers, err := uc.repo.GetSellerOffers(userID)
+func (uc *SellerUsecase) GetOffersByID(ctx context.Context, userID int64) (*dto.SellerOffersListOutput, error) {
+	offers, err := uc.sellerRepo.GetOffersBySellerID(ctx, userID)
 	if err != nil {
-		return model.SellerOffersResponse{}, err
+		return nil, fmt.Errorf("get seller offers: %w", err)
 	}
 
-	return model.SellerOffersResponse{
-		Offers: offers,
+	var items []dto.SellerOfferItem
+	for _, o := range offers {
+		items = append(items, dto.SellerOfferItem{
+			Name:        o.ProductName,
+			Description: o.Description,
+			Image:       o.Image,
+			Price:       o.Price,
+			Quantity:    o.Quantity,
+		})
+	}
+
+	return &dto.SellerOffersListOutput{
+		Offers: items,
 	}, nil
 }
 
-func (uc *SellerUsecase) CreateSellerOffer(req model.CreateSellerOfferRequest, userID int64) error {
-	err := uc.repo.CreateSellerOffer(model.CreateOfferParams{
-		SellerID:        userID,
-		ProductName:     req.ProductName,
-		Description:     req.Description,
-		Image:           req.Image,
-		Price:           req.Price,
-		Quantity:        req.Quantity,
-		CategoryName:    req.CategoryName,
-		SubCategoryName: req.SubCategoryName,
-	})
-
+func (uc *SellerUsecase) CreateOffer(ctx context.Context, input dto.CreateOfferInput, sellerID int64) (*dto.CreateOfferOutput, error) {
+	params, err := entity.NewCreateOfferParams(
+		sellerID,
+		input.ProductName,
+		input.Description,
+		input.Image,
+		input.Price,
+		input.Quantity,
+		input.CategoryName,
+		input.SubCategoryName,
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	if err := uc.sellerRepo.CreateOffer(ctx, params); err != nil {
+		return nil, fmt.Errorf("create offer: %w", err)
+	}
+
+	return &dto.CreateOfferOutput{
+		Message:         "Created successfully",
+		ProductName:     input.ProductName,
+		Description:     input.Description,
+		Image:           input.Image,
+		Price:           input.Price,
+		Quantity:        input.Quantity,
+		CategoryName:    input.CategoryName,
+		SubCategoryName: input.SubCategoryName,
+	}, nil
 }
