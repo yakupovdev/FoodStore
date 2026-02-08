@@ -139,3 +139,26 @@ func (uc *SellerUsecase) CreateOffer(ctx context.Context, input dto.CreateOfferI
 		SubCategoryName: input.SubCategoryName,
 	}, nil
 }
+
+func (uc *SellerUsecase) CreateOfferByExistProducts(ctx context.Context, input dto.CreateOfferByExistProductsInput) (*dto.CreateOfferByExistProductsOutput, error) {
+	offerWithID, err := entity.NewOfferID(input.SellerID, input.CategoryID, input.SubCategoryID, input.ProductID, input.Price, input.Quantity)
+	if err != nil {
+		return nil, err
+	}
+
+	err = uc.sellerRepo.CreateOfferByExistProducts(ctx, offerWithID)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &dto.CreateOfferByExistProductsOutput{
+		Message:       "Created successfully",
+		ProductID:     offerWithID.ProductID,
+		CategoryID:    offerWithID.CategoryID,
+		SubCategoryID: offerWithID.SubCategoryID,
+		Price:         offerWithID.Price,
+		Quantity:      offerWithID.Quantity,
+	}
+
+	return res, nil
+}

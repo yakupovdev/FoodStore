@@ -8,6 +8,7 @@ import (
 	"log"
 
 	pg "github.com/jackc/pgx/v5"
+	"github.com/yakupovdev/FoodStore/internal/domain"
 	"github.com/yakupovdev/FoodStore/internal/domain/entity"
 )
 
@@ -158,6 +159,79 @@ func (r *SellerRepo) CreateOffer(ctx context.Context, params *entity.CreateOffer
 	return tx.Commit(ctx)
 }
 
-//func (r *SellerRepo) CreateOffersByExistProducts(ctx context.Context, params *entity.CreateOfferParams) error {
-//
-//}
+func (r *SellerRepo) CreateOfferByExistProducts(ctx context.Context, params *entity.OfferWithID) error {
+	tx, err := r.conn.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("cannot start transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var exists bool
+
+	err = tx.QueryRow(ctx, `
+    SELECT EXISTS(
+        SELECT 1 FROM categories 
+        WHERE categories_id = $1 AND parent_id IS NULL
+    )
+`, params.CategoryID).Scan(&exists)
+
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("error checking existence of category: %w", err)
+	}
+
+	if !exists {
+		return domain.ErrCategoryID
+	}
+
+	err = tx.QueryRow(ctx, `
+    SELECT EXISTS(
+        SELECT 1 FROM categories 
+        WHERE categories_id = $1 AND parent_id = $2 )`,
+		params.SubCategoryID, params.CategoryID,
+	).Scan(&exists)
+
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("error checking existence of subcategory: %w", err)
+	}
+
+	if !exists {
+		return domain.ErrSubCategoryID
+	}
+
+	err = tx.QueryRow(ctx, `
+    SELECT EXISTS(
+        SELECT 1 FROM products 
+        WHERE categories_id = $1 AND product_id = $2 )`,
+		params.SubCategoryID, params.ProductID,
+	).Scan(&exists)
+
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("error checking existence of product: %w", err)
+	}
+
+	if !exists {
+		return domain.ErrProductID
+	}
+
+	stmt := `INSERT INTO seller_offers (seller_id, product_id, price, quantity)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (seller_id, product_id)
+DO UPDATE SET
+    price = EXCLUDED.price,
+    quantity = EXCLUDED.quantity;`
+
+	_, err = tx.Exec(ctx, stmt, params.SellerID, params.ProductID, params.Price, params.Quantity)
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("create offer: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("create offer: %w", err)
+	}
+	return nil
+}
