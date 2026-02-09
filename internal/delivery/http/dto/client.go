@@ -2,6 +2,38 @@ package dto
 
 import "time"
 
+type CreateOrderInput struct {
+	ClientID int64                     `json:"client_id"`
+	Items    []CreateOrderItemInputDTO `json:"items"`
+}
+
+type CreateOrderItemInputDTO struct {
+	SellerID  int64 `json:"seller_id"`
+	ProductID int64 `json:"product_id"`
+	Quantity  int64 `json:"quantity"`
+}
+
+type UpdateBalanceInput struct {
+	ClientID int64 `json:"client_id"`
+	Balance  int64 `json:"balance"`
+}
+
+type AddAddressInput struct {
+	ClientID int64  `json:"client_id"`
+	Address  string `json:"address"`
+}
+
+type AddAddressOutput struct {
+	Message string `json:"message"`
+}
+
+type CreateOrderOutput struct {
+	OrderID   int64     `json:"order_id"`
+	ClientID  int64     `json:"client_id"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type ClientProfileOutput struct {
 	ID       int64   `json:"id"`
 	Name     string  `json:"name"`
@@ -26,4 +58,8 @@ type ClientOrderItemDTO struct {
 	ProductID       int64 `json:"product_id"`
 	Quantity        int64 `json:"quantity"`
 	PriceAtPurchase int64 `json:"price_at_purchase"`
+}
+
+type BalanceUpdateOutput struct {
+	Message string `json:"message"`
 }

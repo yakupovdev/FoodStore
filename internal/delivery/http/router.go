@@ -36,8 +36,11 @@ func SetupRouter(d RouterDeps) *gin.Engine {
 		client.Use(middleware.AccessTypeMiddleware("client"))
 		{
 			client.GET("/orders", d.ClientHandler.GetOrders)
+			client.POST("/orders", d.ClientHandler.CreateOrder)
 			client.GET("/profile", d.ClientHandler.GetProfile)
 			client.GET("/products", d.ClientHandler.GetProducts)
+			client.POST("/balance", d.ClientHandler.UpdateBalance)
+			client.POST("/address", d.ClientHandler.AddAdress)
 		}
 
 		seller := protected.Group("/seller")

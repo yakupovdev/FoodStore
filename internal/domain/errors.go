@@ -48,3 +48,7 @@ var (
 	ErrSMTPFailed         = errors.New("failed to send email")
 	ErrPasswordHash       = errors.New("failed to hash password")
 )
+
+var (
+	ErrNotEnoughBalance = errors.New("not enough balance to complete the order")
+)
