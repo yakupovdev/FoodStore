@@ -50,6 +50,7 @@ func SetupRouter(d RouterDeps) *gin.Engine {
 			seller.GET("/offers", d.SellerHandler.GetOffers)
 			seller.POST("/offers", d.SellerHandler.CreateOfferByExistProducts)
 			seller.GET("/products", d.SellerHandler.GetExistProducts)
+			seller.POST("/products", d.SellerHandler.CreateOffer)
 		}
 	}
 

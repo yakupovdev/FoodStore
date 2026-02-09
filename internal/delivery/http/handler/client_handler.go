@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,6 +33,7 @@ func (h *ClientHandler) GetProfile(ctx *gin.Context) {
 func (h *ClientHandler) CreateOrder(ctx *gin.Context) {
 	var input dto.CreateOrderInput
 	if err := ctx.ShouldBindJSON(&input); err != nil {
+		log.Println(err, "invalid JSON in CreateOrder")
 		ctx.JSON(ErrInvalidJSON.Status, ErrInvalidJSON.Response)
 		return
 	}
@@ -40,6 +42,7 @@ func (h *ClientHandler) CreateOrder(ctx *gin.Context) {
 
 	output, err := h.uc.CreateOrder(ctx.Request.Context(), input)
 	if err != nil {
+		log.Println(err, "error creating order in CreateOrder")
 		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
 		return
 	}

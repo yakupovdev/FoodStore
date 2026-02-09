@@ -86,8 +86,32 @@ func (r *SellerRepo) GetOffersByProductID(ctx context.Context, productID int64) 
 		}
 		offers = append(offers, o)
 	}
-
+	if len(offers) == 0 {
+		return make([]entity.Offer, 0), errors.New("no offers")
+	}
 	return offers, nil
+}
+
+func (r *SellerRepo) GetOffersBySellerIDAndProductID(ctx context.Context, sellerID, productID int64) (*entity.Offer, error) {
+	stmtOffers := `
+	   SELECT s.seller_id, s.name, p.description, p.img, so.price, so.quantity
+		FROM seller_offers so
+		JOIN products p ON so.product_id = p.product_id
+		JOIN sellers s ON s.seller_id = so.seller_id
+		WHERE p.product_id = $1 AND s.seller_id = $2`
+
+	var offer entity.Offer
+	err := r.conn.QueryRow(ctx, stmtOffers, productID, sellerID).Scan(
+		&offer.SellerID, &offer.SellerName, &offer.Description, &offer.Image, &offer.Price, &offer.Quantity,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("no offers")
+		}
+		return nil, fmt.Errorf("query offer: %w", err)
+	}
+
+	return &offer, nil
 }
 
 func (r *SellerRepo) CreateOffer(ctx context.Context, params *entity.CreateOfferParams) error {

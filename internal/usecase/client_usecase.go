@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/dto"
 	"github.com/yakupovdev/FoodStore/internal/domain"
@@ -54,41 +55,45 @@ func (uc *ClientUsecase) GetProfileByID(ctx context.Context, clientID int64, use
 }
 
 func (uc *ClientUsecase) CreateOrder(ctx context.Context, input dto.CreateOrderInput) (*dto.CreateOrderOutput, error) {
-	var totalCost int64
-	for _, item := range input.Items {
-		offer, err := uc.sellerRepo.GetOffersByProductID(ctx, item.ProductID)
-		if err != nil {
-			return nil, fmt.Errorf("get offer price: %w", err)
-		}
-		price_at_purchase := int64(0)
-		for _, o := range offer {
-			if o.SellerID == item.SellerID {
-				price_at_purchase = o.Price
-				break
-			}
-		}
-		totalCost += price_at_purchase * int64(item.Quantity)
-	}
-
-	err := uc.transactionRepo.ExecuteOrderTransaction(ctx, input.ClientID, totalCost)
-	if err != nil {
-		if err == domain.ErrNotEnoughBalance {
-			return nil, fmt.Errorf("not enough balance: %w", err)
-		}
-		return nil, fmt.Errorf("execute order transaction: %w", err)
-	}
 
 	order := &entity.Order{
 		ClientID: input.ClientID,
 		Status:   "pending",
 	}
-
+	count := 0
 	for _, item := range input.Items {
-		offer, err := uc.sellerRepo.GetOffersByProductID(ctx, item.ProductID)
-		totalAmount := item.Quantity * offer[0].Price
+
+		offer, err := uc.sellerRepo.GetOffersBySellerIDAndProductID(ctx, item.SellerID, item.ProductID)
+		if err != nil {
+			log.Println(err, "error getting offer price in CreateOrder usecase")
+			return nil, fmt.Errorf("get offer price: %w", err)
+		}
+
+		totalAmount := item.Quantity * offer.Price
+
 		if err := uc.transactionRepo.ExecuteSellerTransaction(ctx, item.SellerID, totalAmount); err != nil {
+			log.Println(err, "error executing seller transaction in CreateOrder usecase")
 			return nil, fmt.Errorf("execute seller transaction: %w", err)
 		}
+		log.Println("seller transaction executed successfully for seller ID:", item.SellerID)
+		order.Items = append(order.Items, entity.OrderItem{
+			SellerID:        item.SellerID,
+			ProductID:       item.ProductID,
+			Quantity:        item.Quantity,
+			PriceAtPurchase: offer.Price,
+		})
+		count++
+	}
+
+	if err := uc.orderRepo.Create(ctx, order); err != nil {
+		log.Println(err, "error creating order in CreateOrder usecase")
+		return nil, fmt.Errorf("create order: %w", err)
+	}
+	log.Println("order created successfully with ID:", order.ID)
+
+	var totalCost int64
+	for _, item := range input.Items {
+		offer, err := uc.sellerRepo.GetOffersByProductID(ctx, item.ProductID)
 		if err != nil {
 			return nil, fmt.Errorf("get offer price: %w", err)
 		}
@@ -99,16 +104,16 @@ func (uc *ClientUsecase) CreateOrder(ctx context.Context, input dto.CreateOrderI
 				break
 			}
 		}
-		order.Items = append(order.Items, entity.OrderItem{
-			SellerID:        item.SellerID,
-			ProductID:       item.ProductID,
-			Quantity:        item.Quantity,
-			PriceAtPurchase: priceAtPurchase,
-		})
+		totalCost += priceAtPurchase * int64(item.Quantity)
 	}
 
-	if err := uc.orderRepo.Create(ctx, order); err != nil {
-		return nil, fmt.Errorf("create order: %w", err)
+	err := uc.transactionRepo.ExecuteOrderTransaction(ctx, input.ClientID, totalCost)
+	if err != nil {
+		if err == domain.ErrNotEnoughBalance {
+			return nil, fmt.Errorf("not enough balance: %w", err)
+		}
+		log.Println(err, "error executing order transaction in CreateOrder usecase")
+		return nil, fmt.Errorf("execute order transaction: %w", err)
 	}
 
 	return &dto.CreateOrderOutput{

@@ -24,7 +24,6 @@ var (
 	ErrModerationSellerOffersSchema = errors.New("moderation seller offers schema error")
 	ErrCategoriesAdd                = errors.New("categories add error")
 	ErrProductsAdd                  = errors.New("products add error")
-	ErrCategoriesAdd                = errors.New("add categories error")
 )
 
 func InitSchema(ctx context.Context, conn *pg.Conn) error {
