@@ -22,6 +22,8 @@ var (
 	ErrModerationCategoriesSchema   = errors.New("moderation categories schema error")
 	ErrModerationProductsSchema     = errors.New("moderation products schema error")
 	ErrModerationSellerOffersSchema = errors.New("moderation seller offers schema error")
+	ErrCategoriesAdd                = errors.New("categories add error")
+	ErrProductsAdd                  = errors.New("products add error")
 	ErrCategoriesAdd                = errors.New("add categories error")
 )
 
@@ -66,6 +68,12 @@ func InitSchema(ctx context.Context, conn *pg.Conn) error {
 		return err
 	}
 	if err := ensureModerationSellerOffersSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureCategoriesForTest(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureProductsForTest(ctx, conn); err != nil {
 		return err
 	}
 	return nil
@@ -316,6 +324,38 @@ func ensureCategoriesForTest(ctx context.Context, conn *pg.Conn) error {
 	for _, s := range stmt {
 		if _, err := conn.Exec(ctx, s); err != nil {
 			return ErrCategoriesAdd
+		}
+	}
+
+	return nil
+}
+
+func ensureProductsForTest(ctx context.Context, conn *pg.Conn) error {
+	stmt := []string{
+		`INSERT INTO products (name, description, categories_id, created_at, img) 
+		 VALUES('Whole Milk', 'Fresh whole milk 1L', 1, NOW(), 'milk.jpg');`,
+		`INSERT INTO products (name, description, categories_id, created_at, img) 
+		 VALUES('Butter', 'Salted butter 200g', 1, NOW(), 'butter.jpg');`,
+
+		`INSERT INTO products (name, description, categories_id, created_at, img) 
+		 VALUES('Condensed Milk', 'Sweetened condensed milk 400g', 4, NOW(), 'condensed_milk.jpg');`,
+		`INSERT INTO products (name, description, categories_id, created_at, img) 
+		 VALUES('Cream 20%', 'Fresh cream 250ml', 4, NOW(), 'cream.jpg');`,
+
+		`INSERT INTO products (name, description, categories_id, created_at, img) 
+		 VALUES('Beef Steak', 'Premium beef steak 300g', 10, NOW(), 'beef_steak.jpg');`,
+		`INSERT INTO products (name, description, categories_id, created_at, img) 
+		 VALUES('Ground Beef', 'Minced beef 500g', 10, NOW(), 'ground_beef.jpg');`,
+
+		`INSERT INTO products (name, description, categories_id, created_at, img) 
+		 VALUES('Shrimps', 'Frozen shrimps 500g', 12, NOW(), 'shrimps.jpg');`,
+		`INSERT INTO products (name, description, categories_id, created_at, img) 
+		 VALUES('Salmon Fillet', 'Fresh salmon fillet 400g', 12, NOW(), 'salmon.jpg');`,
+	}
+
+	for _, s := range stmt {
+		if _, err := conn.Exec(ctx, s); err != nil {
+			return ErrProductsAdd
 		}
 	}
 

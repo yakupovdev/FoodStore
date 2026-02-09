@@ -48,3 +48,21 @@ type CreateOfferOutput struct {
 	CategoryName    string `json:"category_name"`
 	SubCategoryName string `json:"sub_category_name"`
 }
+
+type CreateOfferByExistProductsInput struct {
+	SellerID      int64 `json:"seller_id"`
+	CategoryID    int64 `json:"category_id"`
+	SubCategoryID int64 `json:"sub_category_id"`
+	ProductID     int64 `json:"product_id"`
+	Price         int64 `json:"price"`
+	Quantity      int64 `json:"quantity"`
+}
+
+type CreateOfferByExistProductsOutput struct {
+	Message       string `json:"message"`
+	ProductID     int64  `json:"product_id"`
+	CategoryID    int64  `json:"category_id"`
+	SubCategoryID int64  `json:"sub_category_id"`
+	Price         int64  `json:"price"`
+	Quantity      int64  `json:"quantity"`
+}

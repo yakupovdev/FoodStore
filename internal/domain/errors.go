@@ -11,10 +11,14 @@ var (
 
 var (
 	ErrInvalidPrice      = errors.New("price must be positive")
-	ErrInvalidQuantity   = errors.New("quantity must not be negative")
+	ErrInvalidQuantity   = errors.New("quantity must be positive")
 	ErrEmptyProductName  = errors.New("product name must not be empty")
 	ErrEmptyCategoryName = errors.New("category name must not be empty")
 	ErrEmptySubCatName   = errors.New("sub-category name must not be empty")
+	ErrCategoryID        = errors.New("invalid category id")
+	ErrSubCategoryID     = errors.New("invalid sub-category id")
+	ErrProductID         = errors.New("invalid product id")
+	ErrSellerID          = errors.New("invalid seller id")
 )
 
 var (

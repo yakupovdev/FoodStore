@@ -53,3 +53,42 @@ func NewCreateOfferParams(sellerID int64, productName, description, image string
 		SubCategoryName: subCategoryName,
 	}, nil
 }
+
+type OfferWithID struct {
+	SellerID      int64
+	CategoryID    int64
+	SubCategoryID int64
+	ProductID     int64
+	Price         int64
+	Quantity      int64
+}
+
+func NewOfferID(sellerID, categoryID, subCategoryID, productID, price, quantity int64) (*OfferWithID, error) {
+	if categoryID <= 0 {
+		return nil, domain.ErrCategoryID
+	}
+	if subCategoryID <= 0 {
+		return nil, domain.ErrSubCategoryID
+	}
+	if productID <= 0 {
+		return nil, domain.ErrProductID
+	}
+	if sellerID <= 0 {
+		return nil, domain.ErrSellerID
+	}
+	if quantity <= 0 {
+		return nil, domain.ErrSellerID
+	}
+	if price <= 0 {
+		return nil, domain.ErrInvalidPrice
+	}
+
+	return &OfferWithID{
+		SellerID:      sellerID,
+		CategoryID:    categoryID,
+		SubCategoryID: subCategoryID,
+		ProductID:     productID,
+		Price:         price,
+		Quantity:      quantity,
+	}, nil
+}

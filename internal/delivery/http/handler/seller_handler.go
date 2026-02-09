@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/dto"
+	"github.com/yakupovdev/FoodStore/internal/domain"
 	"github.com/yakupovdev/FoodStore/internal/usecase"
 )
 
@@ -48,6 +50,16 @@ func (h *SellerHandler) GetOffers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, output)
 }
 
+func (h *SellerHandler) GetExistProducts(ctx *gin.Context) {
+	products, err := h.uc.GetAllExistProducts(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, products)
+}
+
 func (h *SellerHandler) CreateOffer(ctx *gin.Context) {
 	uid, ok := extractUserID(ctx)
 	if !ok {
@@ -68,4 +80,31 @@ func (h *SellerHandler) CreateOffer(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, output)
+}
+
+func (h *SellerHandler) CreateOfferByExistProducts(ctx *gin.Context) {
+	var req dto.CreateOfferByExistProductsInput
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(ErrInvalidJSON.Status, ErrInvalidJSON.Response)
+		return
+	}
+	var ok bool
+	req.SellerID, ok = extractUserID(ctx)
+	if !ok {
+		ctx.JSON(ErrInvalidToken.Status, ErrInvalidToken.Response)
+		return
+	}
+
+	res, err := h.uc.CreateOfferByExistProducts(ctx, req)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrCategoryID) || errors.Is(err, domain.ErrSubCategoryID) || errors.Is(err, domain.ErrProductID) || errors.Is(err, domain.ErrInvalidPrice) || errors.Is(err, domain.ErrInvalidQuantity):
+			ctx.JSON(ErrInvalidData.Status, ErrInvalidData.Response)
+		default:
+			ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+		}
+	}
+
+	ctx.JSON(http.StatusCreated, res)
 }

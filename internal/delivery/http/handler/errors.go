@@ -19,4 +19,5 @@ var (
 	ErrVerifyCodeIsNotValid = HTTPError{Status: 400, Response: dto.ErrorOutput{Error: "verify code is not valid"}}
 	ErrInvalidToken         = HTTPError{Status: 401, Response: dto.ErrorOutput{Error: "invalid token"}}
 	ErrInvalidUserType      = HTTPError{Status: 401, Response: dto.ErrorOutput{Error: "invalid user type"}}
+	ErrInvalidData          = HTTPError{Status: 400, Response: dto.ErrorOutput{Error: "invalid data"}}
 )
