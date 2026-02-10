@@ -54,6 +54,57 @@ func (uc *ClientUsecase) GetProfileByID(ctx context.Context, clientID int64, use
 	}, nil
 }
 
+func (uc *ClientUsecase) AddToCart(ctx context.Context, input dto.AddToCartInput) (*dto.AddToCartOutput, error) {
+
+	offer, err := uc.sellerRepo.GetOffersBySellerIDAndProductID(ctx, input.SellerID, input.ProductID)
+	if err != nil {
+		return &dto.AddToCartOutput{}, fmt.Errorf("get offer price: %w", err)
+	}
+	if offer.Quantity < input.Quantity {
+		return &dto.AddToCartOutput{}, fmt.Errorf("not enough stock available")
+	}
+	order := &entity.Order{
+		ClientID: input.ClientID,
+		Status:   "cart",
+		Items: []entity.OrderItem{
+			{
+				SellerID:        input.SellerID,
+				ProductID:       input.ProductID,
+				Quantity:        input.Quantity,
+				PriceAtPurchase: offer.Price,
+			},
+		},
+	}
+
+	if err := uc.clientRepo.AddToCart(ctx, *order); err != nil {
+		return &dto.AddToCartOutput{}, fmt.Errorf("add to cart: %w", err)
+	}
+	return &dto.AddToCartOutput{
+		Message: "item added to cart successfully",
+	}, nil
+}
+
+func (uc *ClientUsecase) GetCartItems(ctx context.Context, clientID int64) ([]dto.CartItemOutput, error) {
+	items, err := uc.clientRepo.GetCartItems(ctx, clientID)
+	if err != nil {
+		return nil, fmt.Errorf("get cart items: %w", err)
+	}
+
+	var result []dto.CartItemOutput
+	for _, item := range items {
+		result = append(result, dto.CartItemOutput{
+			CartItemsID:     item.ID,
+			CartID:          item.OrderID,
+			SellerID:        item.SellerID,
+			ProductID:       item.ProductID,
+			Quantity:        item.Quantity,
+			PriceAtPurchase: item.PriceAtPurchase,
+		})
+	}
+
+	return result, nil
+}
+
 func (uc *ClientUsecase) CreateOrder(ctx context.Context, input dto.CreateOrderInput) (*dto.CreateOrderOutput, error) {
 
 	order := &entity.Order{

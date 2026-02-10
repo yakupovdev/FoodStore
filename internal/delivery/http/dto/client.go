@@ -23,6 +23,25 @@ type AddAddressInput struct {
 	Address  string `json:"address"`
 }
 
+type AddToCartInput struct {
+	ClientID  int64 `json:"client_id"`
+	SellerID  int64 `json:"seller_id"`
+	ProductID int64 `json:"product_id"`
+	Quantity  int64 `json:"quantity"`
+}
+
+type CartItemOutput struct {
+	CartItemsID     int64 `json:"cart_items_id"`
+	CartID          int64 `json:"cart_id"`
+	SellerID        int64 `json:"seller_id"`
+	ProductID       int64 `json:"product_id"`
+	Quantity        int64 `json:"quantity"`
+	PriceAtPurchase int64 `json:"price_at_purchase"`
+}
+type AddToCartOutput struct {
+	Message string `json:"message"`
+}
+
 type AddAddressOutput struct {
 	Message string `json:"message"`
 }

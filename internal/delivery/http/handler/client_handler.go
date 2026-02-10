@@ -30,6 +30,39 @@ func (h *ClientHandler) GetProfile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, output)
 }
 
+func (h *ClientHandler) AddToCart(ctx *gin.Context) {
+	var input dto.AddToCartInput
+	if err := ctx.ShouldBindJSON(&input); err != nil {
+		log.Println(err, "invalid JSON in AddToCart")
+		ctx.JSON(ErrInvalidJSON.Status, ErrInvalidJSON.Response)
+		return
+	}
+	clientID := ctx.GetInt64("user_id")
+	input.ClientID = clientID
+
+	output, err := h.uc.AddToCart(ctx.Request.Context(), input)
+	if err != nil {
+		log.Println(err, "error adding to cart in AddToCart")
+		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, output)
+}
+
+func (h *ClientHandler) GetCartItems(ctx *gin.Context) {
+	clientID := ctx.GetInt64("user_id")
+
+	items, err := h.uc.GetCartItems(ctx.Request.Context(), clientID)
+	if err != nil {
+		log.Println(err, "error getting cart items in GetCartItems")
+		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, items)
+}
+
 func (h *ClientHandler) CreateOrder(ctx *gin.Context) {
 	var input dto.CreateOrderInput
 	if err := ctx.ShouldBindJSON(&input); err != nil {
