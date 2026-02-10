@@ -159,4 +159,10 @@ func NewOfferQuantity(sellerID int64, productID int64, num int64) (*OfferQuantit
 	if num <= 0 {
 		return nil, domain.ErrInvalidQuantity
 	}
+
+	return &OfferQuantity{
+		SellerID:                   sellerID,
+		ProductID:                  productID,
+		DecreasingNumberOfQuantity: num,
+	}, nil
 }
