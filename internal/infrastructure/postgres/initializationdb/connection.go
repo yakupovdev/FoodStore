@@ -1,4 +1,4 @@
-package initialization
+package initializationdb
 
 import (
 	"context"
