@@ -12,7 +12,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres/impl"
-	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres/initializationdb"
+	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres/initialization"
 
 	httpdelivery "github.com/yakupovdev/FoodStore/internal/delivery/http"
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/handler"
@@ -35,7 +35,7 @@ func main() {
 	username := os.Getenv("USER")
 	password := os.Getenv("PASSWORD")
 
-	conn, err := initializationdb.NewConnection(appCtx, initializationdb.Config{
+	conn, err := initialization.NewConnection(appCtx, initialization.Config{
 		Database: database,
 		Host:     host,
 		Port:     uint16(port),
@@ -47,7 +47,7 @@ func main() {
 	}
 	defer conn.Close(appCtx)
 
-	if err := initializationdb.InitSchema(appCtx, conn); err != nil {
+	if err := initialization.InitSchema(appCtx, conn); err != nil {
 		panic(err)
 	}
 
