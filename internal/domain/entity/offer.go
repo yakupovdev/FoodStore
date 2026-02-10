@@ -6,6 +6,7 @@ import (
 
 type Offer struct {
 	SellerID    int64
+	ProductID   int64
 	SellerName  string
 	ProductName string
 	Description string
@@ -77,7 +78,7 @@ func NewOfferID(sellerID, categoryID, subCategoryID, productID, price, quantity 
 		return nil, domain.ErrSellerID
 	}
 	if quantity <= 0 {
-		return nil, domain.ErrSellerID
+		return nil, domain.ErrInvalidQuantity
 	}
 	if price <= 0 {
 		return nil, domain.ErrInvalidPrice
@@ -90,5 +91,78 @@ func NewOfferID(sellerID, categoryID, subCategoryID, productID, price, quantity 
 		ProductID:     productID,
 		Price:         price,
 		Quantity:      quantity,
+	}, nil
+}
+
+type SellerOffer struct {
+	SellerID  int64
+	ProductID int64
+	Price     int64
+	Quantity  int64
+}
+
+func NewSellerOffer(sellerID int64, productID int64, price int64, quantity int64) (*SellerOffer, error) {
+	if productID <= 0 {
+		return nil, domain.ErrProductID
+	}
+	if price <= 0 {
+		return nil, domain.ErrInvalidPrice
+	}
+	if sellerID <= 0 {
+		return nil, domain.ErrSellerID
+	}
+	if quantity <= 0 {
+		return nil, domain.ErrInvalidQuantity
+	}
+
+	return &SellerOffer{
+		SellerID:  sellerID,
+		ProductID: productID,
+		Price:     price,
+		Quantity:  quantity,
+	}, nil
+}
+
+type OfferPrimary struct {
+	SellerID  int64
+	ProductID int64
+}
+
+func NewOfferPrimary(sellerID int64, productID int64) (*OfferPrimary, error) {
+	if productID <= 0 {
+		return nil, domain.ErrProductID
+	}
+	if sellerID <= 0 {
+		return nil, domain.ErrSellerID
+	}
+
+	return &OfferPrimary{
+		SellerID:  sellerID,
+		ProductID: productID,
+	}, nil
+}
+
+type OfferQuantity struct {
+	SellerID                   int64
+	ProductID                  int64
+	DecreasingNumberOfQuantity int64
+}
+
+func NewOfferQuantity(sellerID int64, productID int64, num int64) (*OfferQuantity, error) {
+	if productID <= 0 {
+		return nil, domain.ErrProductID
+	}
+	if sellerID <= 0 {
+		return nil, domain.ErrSellerID
+	}
+
+	if num <= 0 {
+		return nil, domain.ErrInvalidQuantity
+	}
+
+	return &OfferQuantity{
+		SellerID:                   sellerID,
+		ProductID:                  productID,
+		DecreasingNumberOfQuantity: num,
 	}, nil
 }

@@ -21,6 +21,7 @@ type SellerOffersListOutput struct {
 
 type SellerOfferItem struct {
 	SellerID    int64  `json:"seller_id,omitempty"`
+	ProductID   int64  `json:"product_id,omitempty"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Image       string `json:"image"`
@@ -65,4 +66,28 @@ type CreateOfferByExistProductsOutput struct {
 	SubCategoryID int64  `json:"sub_category_id"`
 	Price         int64  `json:"price"`
 	Quantity      int64  `json:"quantity"`
+}
+
+type UpdateOfferInput struct {
+	SellerID  int64 `json:"seller_id"`
+	ProductID int64 `json:"product_id"`
+	Price     int64 `json:"price"`
+	Quantity  int64 `json:"quantity"`
+}
+
+type UpdateOfferOutput struct {
+	Message   string `json:"message"`
+	ProductID int64  `json:"product_id"`
+	Price     int64  `json:"price"`
+	Quantity  int64  `json:"quantity"`
+}
+
+type DeleteOfferInput struct {
+	SellerID  int64 `json:"seller_id"`
+	ProductID int64 `json:"product_id"`
+}
+
+type DeleteOfferOutput struct {
+	Message   string `json:"message"`
+	ProductID int64  `json:"product_id"`
 }

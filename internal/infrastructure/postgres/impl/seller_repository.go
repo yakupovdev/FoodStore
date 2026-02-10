@@ -41,7 +41,7 @@ func (r *SellerRepo) FindByUserID(ctx context.Context, userID int64) (*entity.Se
 
 func (r *SellerRepo) GetOffersBySellerID(ctx context.Context, sellerID int64) ([]entity.Offer, error) {
 	stmtOffers := `
-        SELECT p.name, p.description, p.img, so.price, so.quantity
+        SELECT p.product_id, p.name, p.description, p.img, so.price, so.quantity
         FROM seller_offers so
         JOIN products p ON so.product_id = p.product_id
         WHERE so.seller_id = $1`
@@ -55,7 +55,7 @@ func (r *SellerRepo) GetOffersBySellerID(ctx context.Context, sellerID int64) ([
 	var offers []entity.Offer
 	for rows.Next() {
 		var o entity.Offer
-		if err := rows.Scan(&o.ProductName, &o.Description, &o.Image, &o.Price, &o.Quantity); err != nil {
+		if err := rows.Scan(&o.ProductID, &o.ProductName, &o.Description, &o.Image, &o.Price, &o.Quantity); err != nil {
 			return make([]entity.Offer, 0), err
 		}
 		offers = append(offers, o)
@@ -256,6 +256,60 @@ DO UPDATE SET
 	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("create offer: %w", err)
+	}
+	return nil
+}
+
+func (r *SellerRepo) UpdateOffer(ctx context.Context, params *entity.SellerOffer) error {
+	stmt := `
+		UPDATE seller_offers 
+		SET price = $1, quantity = $2 
+		WHERE product_id = $3 AND seller_id = $4
+	`
+
+	cmdTag, err := r.conn.Exec(ctx, stmt,
+		params.Price,
+		params.Quantity,
+		params.ProductID,
+		params.SellerID,
+	)
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("update offer: %w", err)
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return domain.ErrOfferNotFound
+	}
+
+	return nil
+}
+
+func (r *SellerRepo) DeleteOffer(ctx context.Context, params *entity.OfferPrimary) error {
+	stmt := `DELETE FROM seller_offers WHERE product_id = $1 AND seller_id = $2`
+
+	cmdTag, err := r.conn.Exec(ctx, stmt, params.ProductID, params.SellerID)
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("delete offer: %w", err)
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return domain.ErrOfferNotFound
+	}
+
+	return nil
+}
+
+func (r *SellerRepo) DecreaseOfferQuantity(ctx context.Context, params *entity.OfferQuantity) error {
+	stmt := `UPDATE seller_offers SET quantity = quantity - $1`
+	cmdTag, err := r.conn.Exec(ctx, stmt, params)
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("decrease offer_quantity: %w", err)
+	}
+	if cmdTag.RowsAffected() == 0 {
+		return domain.ErrOfferNotFound
 	}
 	return nil
 }

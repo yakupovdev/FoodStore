@@ -18,4 +18,8 @@ type SellerRepository interface {
 	CreateOfferByExistProducts(ctx context.Context, params *entity.OfferWithID) error
 
 	GetOffersBySellerIDAndProductID(ctx context.Context, sellerID, productID int64) (*entity.Offer, error)
+
+	DeleteOffer(ctx context.Context, params *entity.OfferPrimary) error
+
+	UpdateOffer(ctx context.Context, params *entity.SellerOffer) error
 }

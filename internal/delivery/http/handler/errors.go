@@ -22,4 +22,5 @@ var (
 	ErrInvalidData          = HTTPError{Status: 400, Response: dto.ErrorOutput{Error: "invalid data"}}
 	ErrInvalidID            = HTTPError{Status: 400, Response: dto.ErrorOutput{Error: "invalid ID"}}
 	ErrNoProducts           = HTTPError{Status: 404, Response: dto.ErrorOutput{Error: "no products found"}}
+	ErrOfferNotFound        = HTTPError{Status: 404, Response: dto.ErrorOutput{Error: "offer not found"}}
 )

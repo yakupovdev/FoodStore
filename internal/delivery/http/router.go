@@ -52,6 +52,8 @@ func SetupRouter(d RouterDeps) *gin.Engine {
 			seller.GET("/profile", d.SellerHandler.GetProfile)
 			seller.GET("/offers", d.SellerHandler.GetOffers)
 			seller.POST("/offers", d.SellerHandler.CreateOfferByExistProducts)
+			seller.PUT("/offers", d.SellerHandler.UpdateOffer)
+			seller.DELETE("/offers", d.SellerHandler.DeleteOffer)
 			seller.GET("/products", d.SellerHandler.GetExistProducts)
 			seller.POST("/products", d.SellerHandler.CreateOffer)
 		}
