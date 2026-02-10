@@ -214,6 +214,36 @@ func (uc *ClientUsecase) GetOrdersByClientID(ctx context.Context, clientID int64
 	return result, nil
 }
 
+func (uc *ClientUsecase) GetProductByID(ctx context.Context, productID int64) (*dto.ProductOutput, error) {
+	product, err := uc.productRepo.GetProductByID(ctx, productID)
+	if err != nil {
+		return nil, err
+	}
+
+	offers, err := uc.sellerRepo.GetOffersByProductID(ctx, productID)
+	if err != nil {
+		return nil, err
+	}
+
+	var offerDTOs []dto.SellerOfferOutput
+	for _, offer := range offers {
+		offerDTOs = append(offerDTOs, dto.SellerOfferOutput{
+			SellerID:   offer.SellerID,
+			SellerName: offer.SellerName,
+			Price:      offer.Price,
+			Quantity:   offer.Quantity,
+		})
+	}
+
+	return &dto.ProductOutput{
+		ProductID:   product.ID,
+		Name:        product.Name,
+		Description: product.Description,
+		Image:       product.Image,
+		Offers:      offerDTOs,
+	}, nil
+}
+
 func (uc *ClientUsecase) GetProducts(ctx context.Context) ([]dto.CategoryOutput, error) {
 	categories, err := uc.productRepo.GetCategories(ctx)
 	if err != nil {

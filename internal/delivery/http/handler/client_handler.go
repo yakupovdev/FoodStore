@@ -3,9 +3,11 @@ package handler
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/dto"
+	"github.com/yakupovdev/FoodStore/internal/domain"
 	"github.com/yakupovdev/FoodStore/internal/usecase"
 )
 
@@ -23,6 +25,29 @@ func (h *ClientHandler) GetProfile(ctx *gin.Context) {
 
 	output, err := h.uc.GetProfileByID(ctx.Request.Context(), userID, userType)
 	if err != nil {
+		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, output)
+}
+
+func (h *ClientHandler) GetProductByID(ctx *gin.Context) {
+	productIDStr := ctx.Param("product_id")
+	productID, err := strconv.Atoi(productIDStr)
+	if err != nil {
+		log.Println(err, "invalid product ID in GetProductByID")
+		ctx.JSON(ErrInvalidID.Status, ErrInvalidID.Response)
+		return
+	}
+
+	output, err := h.uc.GetProductByID(ctx.Request.Context(), int64(productID))
+	if err == domain.ErrNoProducts {
+		ctx.JSON(ErrNoProducts.Status, ErrNoProducts.Response)
+		return
+	}
+	if err != nil {
+		log.Println(err, "error getting product by ID in GetProductByID")
 		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
 		return
 	}

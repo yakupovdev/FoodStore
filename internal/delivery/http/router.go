@@ -43,6 +43,7 @@ func SetupRouter(d RouterDeps) *gin.Engine {
 			client.POST("/address", d.ClientHandler.AddAdress)
 			client.POST("/cart", d.ClientHandler.AddToCart)
 			client.GET("/cart", d.ClientHandler.GetCartItems)
+			client.GET("/products/:product_id", d.ClientHandler.GetProductByID)
 		}
 
 		seller := protected.Group("/seller")
