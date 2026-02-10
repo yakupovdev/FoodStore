@@ -6,6 +6,7 @@ import (
 	"log"
 
 	pg "github.com/jackc/pgx/v5"
+	"github.com/yakupovdev/FoodStore/internal/domain"
 	"github.com/yakupovdev/FoodStore/internal/domain/entity"
 )
 
@@ -91,4 +92,20 @@ func (r *ProductRepo) GetProductsBySubCategoryID(ctx context.Context, subCategor
 	}
 
 	return products, nil
+}
+
+func (r *ProductRepo) GetProductByID(ctx context.Context, productID int64) (*entity.Product, error) {
+	stmt := `SELECT product_id, name, description, img FROM products WHERE product_id=$1`
+	row := r.conn.QueryRow(ctx, stmt, productID)
+
+	var product entity.Product
+	if err := row.Scan(&product.ID, &product.Name, &product.Description, &product.Image); err != nil {
+		log.Println(err)
+		if err == pg.ErrNoRows {
+			return nil, domain.ErrNoProducts
+		}
+		return nil, fmt.Errorf("get product by id: %w", err)
+	}
+
+	return &product, nil
 }

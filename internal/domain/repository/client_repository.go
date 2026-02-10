@@ -14,4 +14,8 @@ type ClientRepository interface {
 	UpdateBalance(ctx context.Context, clientID int64, newBalance int64) error
 
 	AddAddress(ctx context.Context, input entity.Client) error
+
+	AddToCart(ctx context.Context, cart entity.Order) error
+
+	GetCartItems(ctx context.Context, clientID int64) ([]entity.OrderItem, error)
 }

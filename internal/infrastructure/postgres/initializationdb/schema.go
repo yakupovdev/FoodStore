@@ -24,6 +24,8 @@ var (
 	ErrModerationSellerOffersSchema = errors.New("moderation seller offers schema error")
 	ErrCategoriesAdd                = errors.New("categories add error")
 	ErrProductsAdd                  = errors.New("products add error")
+	ErrCartSchema                   = errors.New("cart schema error")
+	ErrCartItemsSchema              = errors.New("cart items schema error")
 )
 
 func InitSchema(ctx context.Context, conn *pg.Conn) error {
@@ -69,12 +71,19 @@ func InitSchema(ctx context.Context, conn *pg.Conn) error {
 	if err := ensureModerationSellerOffersSchema(ctx, conn); err != nil {
 		return err
 	}
-	if err := ensureCategoriesForTest(ctx, conn); err != nil {
+	if err := ensureCartSchema(ctx, conn); err != nil {
 		return err
 	}
-	if err := ensureProductsForTest(ctx, conn); err != nil {
+	if err := ensureCartItemsSchema(ctx, conn); err != nil {
 		return err
 	}
+	//if err := ensureCategoriesForTest(ctx, conn); err != nil {
+	//	return err
+	//}
+	//if err := ensureProductsForTest(ctx, conn); err != nil {
+	//	return err
+	//}
+
 	return nil
 }
 
@@ -358,5 +367,35 @@ func ensureProductsForTest(ctx context.Context, conn *pg.Conn) error {
 		}
 	}
 
+	return nil
+}
+
+func ensureCartSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS cart (
+    cart_id BIGSERIAL PRIMARY KEY,
+    client_id BIGINT NOT NULL REFERENCES clients(client_id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);`)
+	if err != nil {
+		return ErrCartSchema
+	}
+	return nil
+}
+
+func ensureCartItemsSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS cart_items (
+    cart_item_id BIGSERIAL PRIMARY KEY,
+    cart_id BIGINT NOT NULL REFERENCES cart(cart_id) ON DELETE CASCADE,
+    seller_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    quantity INT NOT NULL,
+    price_at_purchase BIGINT NOT NULL,
+    FOREIGN KEY (seller_id, product_id) REFERENCES seller_offers(seller_id, product_id)
+);`)
+	if err != nil {
+		return ErrCartItemsSchema
+	}
 	return nil
 }

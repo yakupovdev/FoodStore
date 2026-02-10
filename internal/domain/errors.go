@@ -52,3 +52,7 @@ var (
 var (
 	ErrNotEnoughBalance = errors.New("not enough balance to complete the order")
 )
+
+var (
+	ErrNoProducts = errors.New("no products found")
+)
