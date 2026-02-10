@@ -300,3 +300,16 @@ func (r *SellerRepo) DeleteOffer(ctx context.Context, params *entity.OfferPrimar
 
 	return nil
 }
+
+func (r *SellerRepo) DecreaseOfferQuantity(ctx context.Context, params *entity.OfferQuantity) error {
+	stmt := `UPDATE seller_offers SET quantity = quantity - $1`
+	cmdTag, err := r.conn.Exec(ctx, stmt, params)
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("decrease offer_quantity: %w", err)
+	}
+	if cmdTag.RowsAffected() == 0 {
+		return domain.ErrOfferNotFound
+	}
+	return nil
+}

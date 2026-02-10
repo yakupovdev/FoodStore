@@ -141,3 +141,22 @@ func NewOfferPrimary(sellerID int64, productID int64) (*OfferPrimary, error) {
 		ProductID: productID,
 	}, nil
 }
+
+type OfferQuantity struct {
+	SellerID                   int64
+	ProductID                  int64
+	DecreasingNumberOfQuantity int64
+}
+
+func NewOfferQuantity(sellerID int64, productID int64, num int64) (*OfferQuantity, error) {
+	if productID <= 0 {
+		return nil, domain.ErrProductID
+	}
+	if sellerID <= 0 {
+		return nil, domain.ErrSellerID
+	}
+
+	if num <= 0 {
+		return nil, domain.ErrInvalidQuantity
+	}
+}
