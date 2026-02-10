@@ -49,6 +49,7 @@ func (uc *SellerUsecase) GetOffersByID(ctx context.Context, userID int64) (*dto.
 	var items []dto.SellerOfferItem
 	for _, o := range offers {
 		items = append(items, dto.SellerOfferItem{
+			ProductID:   o.ProductID,
 			Name:        o.ProductName,
 			Description: o.Description,
 			Image:       o.Image,
@@ -161,4 +162,39 @@ func (uc *SellerUsecase) CreateOfferByExistProducts(ctx context.Context, input d
 	}
 
 	return res, nil
+}
+
+func (uc *SellerUsecase) UpdateOffer(ctx context.Context, input dto.UpdateOfferInput) (*dto.UpdateOfferOutput, error) {
+	offer, err := entity.NewSellerOffer(input.SellerID, input.ProductID, input.Price, input.Quantity)
+	if err != nil {
+		return nil, err
+	}
+
+	err = uc.sellerRepo.UpdateOffer(ctx, offer)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.UpdateOfferOutput{
+		Message:   "Offer updated successfully",
+		ProductID: offer.ProductID,
+		Price:     offer.Price,
+		Quantity:  offer.Quantity,
+	}, nil
+}
+
+func (uc *SellerUsecase) DeleteOffer(ctx context.Context, input dto.DeleteOfferInput) (*dto.DeleteOfferOutput, error) {
+	offerPrimary, err := entity.NewOfferPrimary(input.SellerID, input.ProductID)
+	if err != nil {
+		return nil, err
+	}
+	err = uc.sellerRepo.DeleteOffer(ctx, offerPrimary)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.DeleteOfferOutput{
+		Message:   "Offer deleted successfully",
+		ProductID: offerPrimary.ProductID,
+	}, nil
 }

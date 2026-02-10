@@ -19,6 +19,7 @@ var (
 	ErrSubCategoryID     = errors.New("invalid sub-category id")
 	ErrProductID         = errors.New("invalid product id")
 	ErrSellerID          = errors.New("invalid seller id")
+	ErrOfferNotFound     = errors.New("offer not found")
 )
 
 var (
@@ -43,7 +44,6 @@ var (
 )
 
 var (
-	ErrInternal           = errors.New("internal server error")
 	ErrDatabaseConnection = errors.New("database connection failed")
 	ErrSMTPFailed         = errors.New("failed to send email")
 	ErrPasswordHash       = errors.New("failed to hash password")

@@ -108,3 +108,64 @@ func (h *SellerHandler) CreateOfferByExistProducts(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, res)
 }
+
+func (h *SellerHandler) UpdateOffer(ctx *gin.Context) {
+	uid, ok := extractUserID(ctx)
+	if !ok {
+		ctx.JSON(ErrInvalidToken.Status, ErrInvalidToken.Response)
+		return
+	}
+
+	var req dto.UpdateOfferInput
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(ErrInvalidJSON.Status, ErrInvalidJSON.Response)
+		return
+	}
+
+	req.SellerID = uid
+	output, err := h.uc.UpdateOffer(ctx.Request.Context(), req)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrProductID) || errors.Is(err, domain.ErrInvalidPrice) || errors.Is(err, domain.ErrInvalidQuantity):
+			ctx.JSON(ErrInvalidData.Status, ErrInvalidData.Response)
+		case errors.Is(err, domain.ErrOfferNotFound):
+			ctx.JSON(ErrOfferNotFound.Status, ErrOfferNotFound.Response)
+		default:
+			ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+		}
+		return
+	}
+
+	ctx.JSON(http.StatusOK, output)
+}
+
+func (h *SellerHandler) DeleteOffer(ctx *gin.Context) {
+	uid, ok := extractUserID(ctx)
+	if !ok {
+		ctx.JSON(ErrInvalidToken.Status, ErrInvalidToken.Response)
+		return
+	}
+
+	var req dto.DeleteOfferInput
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(ErrInvalidJSON.Status, ErrInvalidJSON.Response)
+		return
+	}
+
+	req.SellerID = uid
+
+	output, err := h.uc.DeleteOffer(ctx.Request.Context(), req)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrProductID):
+			ctx.JSON(ErrInvalidData.Status, ErrInvalidData.Response)
+		case errors.Is(err, domain.ErrOfferNotFound):
+			ctx.JSON(ErrOfferNotFound.Status, ErrOfferNotFound.Response)
+		default:
+			ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+		}
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, output)
+}
