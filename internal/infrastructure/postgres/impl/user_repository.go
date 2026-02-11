@@ -35,7 +35,7 @@ func (r *UserRepo) Create(ctx context.Context, user *entity.User) (int64, error)
 		return 0, fmt.Errorf("failed to insert into users: %w", err)
 	}
 
-	if user.UserType != "moderator" {
+	if user.UserType != "moderator" && user.UserType != "admin" {
 		var secondaryStmt string
 		switch user.UserType {
 		case "client":
@@ -119,4 +119,46 @@ func (r *UserRepo) UpdateLastLogin(ctx context.Context, userID int64) error {
 		return fmt.Errorf("update last login: %w", err)
 	}
 	return nil
+}
+
+func (r *UserRepo) Delete(ctx context.Context, userID int64) error {
+	tx, err := r.conn.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+	deleteUserStmt := `DELETE FROM users WHERE userid=$1`
+	if _, err := tx.Exec(ctx, deleteUserStmt, userID); err != nil {
+		return fmt.Errorf("failed to delete from users: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
+}
+
+func (r *UserRepo) GetAllUsers(ctx context.Context) ([]entity.User, error) {
+	stmt := `SELECT userid, email, type, balance, created_at, last_enter FROM users`
+
+	rows, err := r.conn.Query(ctx, stmt)
+	if err != nil {
+		return nil, fmt.Errorf("query all users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []entity.User
+	for rows.Next() {
+		var u entity.User
+		err := rows.Scan(&u.ID, &u.Email, &u.UserType, &u.Balance, &u.CreatedAt, &u.LastEnter)
+		if err != nil {
+			return nil, fmt.Errorf("scan user: %w", err)
+		}
+		users = append(users, u)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate users: %w", err)
+	}
+
+	return users, nil
 }

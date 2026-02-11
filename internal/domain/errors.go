@@ -20,6 +20,8 @@ var (
 	ErrProductID                         = errors.New("invalid product id")
 	ErrSellerID                          = errors.New("invalid seller id")
 	ErrOfferNotFound                     = errors.New("offer not found")
+	ErrNotEnoughQuantity                 = errors.New("not enough quantity available")
+	ErrSubscriptionNotFound              = errors.New("subscription failed try again later")
 	ErrInvalidDecreasingNumberOfQuantity = errors.New("invalid decreasing number of quantity")
 )
 

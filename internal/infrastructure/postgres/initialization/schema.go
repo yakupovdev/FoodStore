@@ -3,6 +3,7 @@ package initialization
 import (
 	"context"
 	"errors"
+	"log"
 
 	pg "github.com/jackc/pgx/v5"
 )
@@ -26,6 +27,8 @@ var (
 	ErrProductsAdd                  = errors.New("products add error")
 	ErrCartSchema                   = errors.New("cart schema error")
 	ErrCartItemsSchema              = errors.New("cart items schema error")
+	ErrLogsSchema                   = errors.New("logs schema error")
+	ErrSubscriptionSchema           = errors.New("subscription schema error")
 )
 
 func InitSchema(ctx context.Context, conn *pg.Conn) error {
@@ -77,6 +80,12 @@ func InitSchema(ctx context.Context, conn *pg.Conn) error {
 	if err := ensureCartItemsSchema(ctx, conn); err != nil {
 		return err
 	}
+	if err := ensureLogsTransactionSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureSubscriptionSchema(ctx, conn); err != nil {
+		return err
+	}
 	//if err := ensureCategoriesForTest(ctx, conn); err != nil {
 	//	return err
 	//}
@@ -109,13 +118,13 @@ func ensureRecoveryCodesSchema(ctx context.Context, conn *pg.Conn) error {
 	stmts := []string{
 		`
 CREATE TABLE IF NOT EXISTS password_recovery_codes (
-	userid BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
+	userid BIGINT NOT NULL REFERENCES users(userid) ON DELETE CASCADE,
 	email VARCHAR(100) NOT NULL,
 	code_hash VARCHAR(255) NOT NULL,
     type VARCHAR(10) NOT NULL,
 	expired_at TIMESTAMPTZ NOT NULL,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-	PRIMARY KEY (userID)
+	PRIMARY KEY (userid)
 );`,
 		`CREATE INDEX IF NOT EXISTS idx_prc_email ON password_recovery_codes (email);`,
 		`CREATE INDEX IF NOT EXISTS idx_prc_expired_at ON password_recovery_codes (expired_at);`,
@@ -132,7 +141,7 @@ CREATE TABLE IF NOT EXISTS password_recovery_codes (
 func ensureWhitelistSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS token_whitelist (
-	userid BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
+	userid BIGINT NOT NULL REFERENCES users(userid) ON DELETE CASCADE,
 	access_token_hash VARCHAR(255) NOT NULL,
     expired_at TIMESTAMPTZ NOT NULL,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -148,7 +157,7 @@ CREATE TABLE IF NOT EXISTS token_whitelist (
 func ensureBlacklistSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS token_blacklist (
-    	userid BIGINT NOT NULL REFERENCES users(userID) ON DELETE CASCADE,
+    	userid BIGINT NOT NULL REFERENCES users(userid) ON DELETE CASCADE,
     	access_token_hash VARCHAR(255) NOT NULL,
     expired_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (userID, access_token_hash)
@@ -237,7 +246,7 @@ func ensureOrdersSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS orders (
     order_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT NOT NULL REFERENCES clients(client_id),
+    client_id BIGINT NOT NULL REFERENCES clients(client_id) ON DELETE CASCADE,
     status VARCHAR(100) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );`)
@@ -252,13 +261,14 @@ func ensureOrdersItemsSchema(ctx context.Context, conn *pg.Conn) error {
 CREATE TABLE IF NOT EXISTS orders_items (
     order_item_id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL REFERENCES orders(order_id) ON DELETE CASCADE,
-    seller_id BIGINT NOT NULL,
+    seller_id BIGINT NOT NULL ,
     product_id BIGINT NOT NULL,
     quantity INT NOT NULL,
     price_at_purchase BIGINT NOT NULL,
-    FOREIGN KEY (seller_id, product_id) REFERENCES seller_offers(seller_id, product_id)
+    FOREIGN KEY (seller_id, product_id) REFERENCES seller_offers(seller_id, product_id) ON DELETE CASCADE
 );`)
 	if err != nil {
+		log.Println(err)
 		return ErrOrdersItemsSchema
 	}
 	return nil
@@ -374,7 +384,7 @@ func ensureCartSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS cart (
     cart_id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT NOT NULL REFERENCES clients(client_id),
+    client_id BIGINT NOT NULL REFERENCES clients(client_id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );`)
 	if err != nil {
@@ -388,14 +398,43 @@ func ensureCartItemsSchema(ctx context.Context, conn *pg.Conn) error {
 CREATE TABLE IF NOT EXISTS cart_items (
     cart_item_id BIGSERIAL PRIMARY KEY,
     cart_id BIGINT NOT NULL REFERENCES cart(cart_id) ON DELETE CASCADE,
-    seller_id BIGINT NOT NULL,
+    seller_id BIGINT NOT NULL ,
     product_id BIGINT NOT NULL,
     quantity INT NOT NULL,
     price_at_purchase BIGINT NOT NULL,
-    FOREIGN KEY (seller_id, product_id) REFERENCES seller_offers(seller_id, product_id)
+    FOREIGN KEY (seller_id, product_id) REFERENCES seller_offers(seller_id, product_id) ON DELETE CASCADE
 );`)
 	if err != nil {
 		return ErrCartItemsSchema
+	}
+	return nil
+}
+
+func ensureLogsTransactionSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS logs_transactions (
+	log_id BIGSERIAL PRIMARY KEY,
+	client_id BIGINT NOT NULL REFERENCES clients(client_id) ON DELETE CASCADE,
+    seller_id BIGINT NOT NULL REFERENCES sellers(seller_id) ON DELETE CASCADE,
+    total_amount BIGINT NOT NULL,
+    commission_amount BIGINT NOT NULL,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);`)
+	if err != nil {
+		return ErrLogsSchema
+	}
+	return nil
+}
+
+func ensureSubscriptionSchema(ctx context.Context, conn *pg.Conn) error {
+	_, err := conn.Exec(ctx, `
+CREATE TABLE IF NOT EXISTS subscriptions (
+	subscription_id BIGSERIAL PRIMARY KEY,
+	seller_id BIGINT NOT NULL REFERENCES sellers(seller_id) ON DELETE CASCADE,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);`)
+	if err != nil {
+		return ErrSubscriptionSchema
 	}
 	return nil
 }
