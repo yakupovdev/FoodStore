@@ -1,5 +1,11 @@
 package entity
 
+import (
+	"strings"
+
+	"github.com/yakupovdev/FoodStore/internal/domain"
+)
+
 type Category struct {
 	ID            int64
 	Name          string
@@ -17,4 +23,28 @@ type Product struct {
 	Name        string
 	Description string
 	Image       string
+}
+
+type CreationProduct struct {
+	CategoryID  int64
+	Name        string
+	Description string
+	Image       string
+}
+
+func NewCreationProduct(categoryID int64, name string, description string, image string) (*CreationProduct, error) {
+	name = strings.TrimSpace(name)
+	description = strings.TrimSpace(description)
+	image = strings.TrimSpace(image)
+
+	if categoryID <= 0 {
+		return nil, domain.ErrCategoryID
+	}
+
+	return &CreationProduct{
+		CategoryID:  categoryID,
+		Name:        name,
+		Description: description,
+		Image:       image,
+	}, nil
 }

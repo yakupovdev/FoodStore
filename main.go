@@ -60,6 +60,7 @@ func main() {
 	productRepo := impl.NewProductRepo(conn)
 	sellerRepo := impl.NewSellerRepo(conn)
 	transactionRepo := impl.NewTransactionRepository(conn)
+	moderatorRepo := impl.NewModeratorRepo(conn)
 
 	// Services
 	codeHasher := security.NewSHA256CodeHasher()
@@ -76,7 +77,8 @@ func main() {
 	authUsecase, _ := usecase.NewAuthUsecase(userRepo, tokenRepo, tokenSvc)
 	recoveryUsecase, _ := usecase.NewRecoveryUsecase(userRepo, recoveryCodeRepo, codeHasher, tokenSvc, codeGen, emailSender)
 	clientUsecase, _ := usecase.NewClientUsecase(clientRepo, orderRepo, productRepo, sellerRepo, transactionRepo)
-	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo, productRepo)
+	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo, productRepo, moderatorRepo)
+	moderatorUsecase, _ := usecase.NewModeratorUsecase(moderatorRepo, productRepo, sellerRepo, emailSender)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authUsecase)
@@ -85,18 +87,11 @@ func main() {
 	refreshTokenHandler := handler.NewRefreshTokenHandler(authUsecase)
 	clientHandler := handler.NewClientHandler(clientUsecase)
 	sellerHandler := handler.NewSellerHandler(sellerUsecase)
+	moderatorHandler := handler.NewModeratorHandler(moderatorUsecase)
 
 	// Router
-	r := httpdelivery.SetupRouter(httpdelivery.RouterDeps{
-		AuthHandler:         authHandler,
-		EmailHandler:        emailHandler,
-		RecoveryHandler:     recoveryHandler,
-		RefreshTokenHandler: refreshTokenHandler,
-		ClientHandler:       clientHandler,
-		SellerHandler:       sellerHandler,
-		TokenValidator:      authUsecase,
-		TokenService:        tokenSvc,
-	})
+	deps := httpdelivery.NewRouterDeps(authHandler, emailHandler, recoveryHandler, refreshTokenHandler, clientHandler, sellerHandler, moderatorHandler, authUsecase, tokenSvc)
+	r := httpdelivery.SetupRouter(deps)
 
 	// Server
 	srv := &http.Server{

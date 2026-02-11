@@ -47,3 +47,29 @@ func (s *SMTPSender) SendRecoveryCode(_ context.Context, emailTo, code string) e
 		msg,
 	)
 }
+
+func (s *SMTPSender) SendMessage(emailTo, message string) error {
+	auth := smtp.PlainAuth(
+		"",
+		s.from,
+		s.password,
+		s.host,
+	)
+
+	msg := []byte(
+		"From: FoodStore <" + s.from + ">\r\n" +
+			"To:" + emailTo + "\r\n" +
+			"Subject: Test Email from FoodStore\r\n" +
+			"MIME-Version: 1.0\r\n" +
+			"Content-UserType: text/plain; charset=\"UTF-8\"\r\n" +
+			"\r\n" + message + "\n",
+	)
+
+	return smtp.SendMail(
+		s.host+":"+s.port,
+		auth,
+		s.from,
+		[]string{emailTo},
+		msg,
+	)
+}

@@ -21,6 +21,8 @@ var (
 	ErrSellerID                          = errors.New("invalid seller id")
 	ErrOfferNotFound                     = errors.New("offer not found")
 	ErrInvalidDecreasingNumberOfQuantity = errors.New("invalid decreasing number of quantity")
+	ErrInvalidProductName                = errors.New("invalid product name")
+	ErrInvalidDescription                = errors.New("invalid description")
 )
 
 var (
@@ -55,5 +57,7 @@ var (
 )
 
 var (
-	ErrNoProducts = errors.New("no products found")
+	ErrNoProducts          = errors.New("no products found")
+	ErrCategoryNotFound    = errors.New("category not found")
+	ErrSubCategoryNotFound = errors.New("sub-category not found")
 )

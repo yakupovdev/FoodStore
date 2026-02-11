@@ -91,3 +91,25 @@ type DeleteOfferOutput struct {
 	Message   string `json:"message"`
 	ProductID int64  `json:"product_id"`
 }
+
+type CreateOfferWithNewProductInput struct {
+	SellerID      int64  `json:"seller_id"`
+	CategoryID    int64  `json:"category_id"`
+	SubCategoryID int64  `json:"sub_category_id"`
+	ProductName   string `json:"product_name"`
+	Description   string `json:"description"`
+	Image         string `json:"image"`
+	Price         int64  `json:"price"`
+	Quantity      int64  `json:"quantity"`
+}
+
+type CreateOfferWithNewProductOutput struct {
+	Message       string `json:"message"`
+	CategoryID    int64  `json:"category_id"`
+	SubCategoryID int64  `json:"sub_category_id"`
+	ProductName   string `json:"product_name"`
+	Description   string `json:"description"`
+	Image         string `json:"image"`
+	Price         int64  `json:"price"`
+	Quantity      int64  `json:"quantity"`
+}

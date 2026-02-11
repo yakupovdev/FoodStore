@@ -14,4 +14,12 @@ type ProductRepository interface {
 	GetProductsBySubCategoryID(ctx context.Context, subCategoryID int64) ([]entity.Product, error)
 
 	GetProductByID(ctx context.Context, productID int64) (*entity.Product, error)
+
+	CreateProduct(ctx context.Context, product *entity.CreationProduct) (int64, error)
+
+	GetParentID(ctx context.Context, productID int64) (int64, error)
+
+	GetSubCategoryNameByID(ctx context.Context, categoryID int64) (string, error)
+
+	GetCategoryNameByID(ctx context.Context, categoryID int64) (string, error)
 }
