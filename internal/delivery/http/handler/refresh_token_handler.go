@@ -15,6 +15,16 @@ func NewRefreshTokenHandler(uc *usecase.AuthUsecase) *RefreshTokenHandler {
 	return &RefreshTokenHandler{uc: uc}
 }
 
+// RefreshAccessToken godoc
+// @Summary Обновить access токен
+// @Description Обновляет access токен по refresh токену
+// @Tags Auth
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} dto.RefreshAccessTokenOutput
+// @Failure 404 {object} dto.ErrorOutput "Пользователь не найден"
+// @Failure 500 {object} dto.ErrorOutput
+// @Router /refresh-access/token [post]
 func (h *RefreshTokenHandler) RefreshAccessToken(ctx *gin.Context) {
 	uid, ok := extractUserID(ctx)
 	if !ok {

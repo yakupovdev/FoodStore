@@ -19,6 +19,19 @@ func NewAuthHandler(uc *usecase.AuthUsecase) *AuthHandler {
 	return &AuthHandler{uc: uc}
 }
 
+// RegisterUser godoc
+// @Summary Регистрация пользователя
+// @Description Регистрация нового пользователя (client, seller, moderator)
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param input body dto.RegisterInput true "Данные для регистрации"
+// @Success 200 {object} dto.RegisterOutput
+// @Failure 400 {object} dto.ErrorOutput "Некорректный JSON или пустые поля"
+// @Failure 401 {object} dto.ErrorOutput "Некорректный тип пользователя"
+// @Failure 409 {object} dto.ErrorOutput "Пользователь уже существует"
+// @Failure 500 {object} dto.ErrorOutput "Внутренняя ошибка сервера"
+// @Router /auth/register [post]
 func (h *AuthHandler) RegisterUser(ctx *gin.Context) {
 	var req dto.RegisterInput
 
@@ -51,6 +64,18 @@ func (h *AuthHandler) RegisterUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, output)
 }
 
+// LoginUser godoc
+// @Summary Авторизация пользователя
+// @Description Вход пользователя по email и паролю, возвращает access и refresh токены
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param input body dto.LoginInput true "Данные для входа"
+// @Success 200 {object} dto.LoginOutput
+// @Failure 400 {object} dto.ErrorOutput "Некорректный JSON или пустые поля"
+// @Failure 401 {object} dto.ErrorOutput "Неверные учётные данные"
+// @Failure 500 {object} dto.ErrorOutput "Внутренняя ошибка сервера"
+// @Router /auth/login [post]
 func (h *AuthHandler) LoginUser(ctx *gin.Context) {
 	var req dto.LoginInput
 

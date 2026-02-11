@@ -16,6 +16,19 @@ func NewRecoveryHandler(uc *usecase.RecoveryUsecase) *RecoveryHandler {
 	return &RecoveryHandler{uc: uc}
 }
 
+// ResetUserPassword godoc
+// @Summary Сбросить пароль
+// @Description Сбрасывает пароль пользователя (требуется recovery токен)
+// @Tags Recovery
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param input body dto.ResetPasswordInput true "Новый пароль"
+// @Success 200 {object} dto.ResetPasswordOutput
+// @Failure 400 {object} dto.ErrorOutput "Пустые поля"
+// @Failure 404 {object} dto.ErrorOutput "Пользователь не найден"
+// @Failure 500 {object} dto.ErrorOutput
+// @Router /recovery-password/reset [post]
 func (h *RecoveryHandler) ResetUserPassword(ctx *gin.Context) {
 	var req dto.ResetPasswordInput
 

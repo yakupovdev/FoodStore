@@ -2,6 +2,8 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/handler"
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/middleware"
 	"github.com/yakupovdev/FoodStore/internal/domain/entity"
@@ -30,7 +32,7 @@ func NewRouterDeps(
 	clientHandler *handler.ClientHandler,
 	sellerHandler *handler.SellerHandler,
 	moderatorHandler *handler.ModeratorHandler,
-  adminHandler        *handler.AdminHandler,
+	adminHandler *handler.AdminHandler,
 	tokenValidator usecase.TokenValidator,
 	tokenService service.TokenService,
 ) *RouterDeps {
@@ -42,7 +44,7 @@ func NewRouterDeps(
 		ClientHandler:       clientHandler,
 		SellerHandler:       sellerHandler,
 		ModeratorHandler:    moderatorHandler,
-    AdminHandler:        adminHandler,
+		AdminHandler:        adminHandler,
 		TokenValidator:      tokenValidator,
 		TokenService:        tokenService,
 	}
@@ -50,6 +52,9 @@ func NewRouterDeps(
 
 func SetupRouter(d *RouterDeps) *gin.Engine {
 	router := gin.Default()
+
+	// Swagger UI
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	auth := router.Group("/auth")
 	{
@@ -84,7 +89,7 @@ func SetupRouter(d *RouterDeps) *gin.Engine {
 			seller.DELETE("/offers", d.SellerHandler.DeleteOffer)
 			seller.POST("/new-offers", d.SellerHandler.CreateOfferWithNewProduct)
 			seller.GET("/products", d.SellerHandler.GetExistProducts)
-      seller.GET("/subscription", d.SellerHandler.PurchaseSubscription)
+			seller.GET("/subscription", d.SellerHandler.PurchaseSubscription)
 		}
 
 		moderator := protected.Group("/moderator")

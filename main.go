@@ -19,8 +19,19 @@ import (
 	"github.com/yakupovdev/FoodStore/internal/infrastructure/email"
 	"github.com/yakupovdev/FoodStore/internal/infrastructure/security"
 	"github.com/yakupovdev/FoodStore/internal/usecase"
+
+	_ "github.com/yakupovdev/FoodStore/docs"
 )
 
+// @title FoodStore API
+// @version 1.0
+// @description API сервер для интернет-магазина продуктов FoodStore
+// @host localhost:9000
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Введите токен в формате: Bearer {token}
 func main() {
 	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel()
@@ -92,7 +103,7 @@ func main() {
 	clientHandler := handler.NewClientHandler(clientUsecase)
 	sellerHandler := handler.NewSellerHandler(sellerUsecase)
 	moderatorHandler := handler.NewModeratorHandler(moderatorUsecase)
-  adminHandler := handler.NewAdminHandler(adminUsecase)
+	adminHandler := handler.NewAdminHandler(adminUsecase)
 
 	// Router
 	deps := httpdelivery.NewRouterDeps(authHandler, emailHandler, recoveryHandler, refreshTokenHandler, clientHandler, sellerHandler, moderatorHandler, adminHandler, authUsecase, tokenSvc)

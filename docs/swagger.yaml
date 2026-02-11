@@ -1,0 +1,1495 @@
+basePath: /
+definitions:
+  dto.AddAddressInput:
+    properties:
+      address:
+        type: string
+      client_id:
+        type: integer
+    type: object
+  dto.AddAddressOutput:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.AddToCartInput:
+    properties:
+      client_id:
+        type: integer
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      seller_id:
+        type: integer
+    type: object
+  dto.AddToCartOutput:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.BalanceUpdateOutput:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.CartItemOutput:
+    properties:
+      cart_id:
+        type: integer
+      cart_items_id:
+        type: integer
+      price_at_purchase:
+        type: integer
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      seller_id:
+        type: integer
+    type: object
+  dto.CategoryIDOutput:
+    properties:
+      category_id:
+        type: integer
+      name:
+        type: string
+      sub_category:
+        items:
+          $ref: '#/definitions/dto.SubCategoryIDOutput'
+        type: array
+    type: object
+  dto.CategoryOutput:
+    properties:
+      name:
+        type: string
+      sub_category:
+        items:
+          $ref: '#/definitions/dto.SubCategoryOutput'
+        type: array
+    type: object
+  dto.ClientOrderItemDTO:
+    properties:
+      order_id:
+        type: integer
+      order_items_id:
+        type: integer
+      price_at_purchase:
+        type: integer
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      seller_id:
+        type: integer
+    type: object
+  dto.ClientOrderOutput:
+    properties:
+      client_id:
+        type: integer
+      created_at:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/dto.ClientOrderItemDTO'
+        type: array
+      order_id:
+        type: integer
+      status:
+        type: string
+    type: object
+  dto.ClientProfileOutput:
+    properties:
+      balance:
+        type: integer
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      rating:
+        type: number
+      user_type:
+        type: string
+    type: object
+  dto.CreateAdminInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      secret_key:
+        type: string
+    type: object
+  dto.CreateAdminOutput:
+    properties:
+      message:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  dto.CreateOfferByExistProductsInput:
+    properties:
+      category_id:
+        type: integer
+      price:
+        type: integer
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      seller_id:
+        type: integer
+      sub_category_id:
+        type: integer
+    type: object
+  dto.CreateOfferByExistProductsOutput:
+    properties:
+      category_id:
+        type: integer
+      message:
+        type: string
+      price:
+        type: integer
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      sub_category_id:
+        type: integer
+    type: object
+  dto.CreateOfferWithNewProductInput:
+    properties:
+      category_id:
+        type: integer
+      description:
+        type: string
+      image:
+        type: string
+      price:
+        type: integer
+      product_name:
+        type: string
+      quantity:
+        type: integer
+      seller_id:
+        type: integer
+      sub_category_id:
+        type: integer
+    type: object
+  dto.CreateOfferWithNewProductOutput:
+    properties:
+      category_id:
+        type: integer
+      description:
+        type: string
+      image:
+        type: string
+      message:
+        type: string
+      price:
+        type: integer
+      product_name:
+        type: string
+      quantity:
+        type: integer
+      sub_category_id:
+        type: integer
+    type: object
+  dto.CreateOrderInput:
+    properties:
+      client_id:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/dto.CreateOrderItemInputDTO'
+        type: array
+    type: object
+  dto.CreateOrderItemInputDTO:
+    properties:
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      seller_id:
+        type: integer
+    type: object
+  dto.CreateOrderOutput:
+    properties:
+      client_id:
+        type: integer
+      created_at:
+        type: string
+      order_id:
+        type: integer
+      status:
+        type: string
+    type: object
+  dto.DeleteOfferInput:
+    properties:
+      product_id:
+        type: integer
+      seller_id:
+        type: integer
+    type: object
+  dto.DeleteOfferOutput:
+    properties:
+      message:
+        type: string
+      product_id:
+        type: integer
+    type: object
+  dto.DeleteUserInput:
+    properties:
+      user_id:
+        type: integer
+    type: object
+  dto.DeleteUserOutput:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.ErrorOutput:
+    properties:
+      error:
+        type: string
+    type: object
+  dto.GetAllUsersOutput:
+    properties:
+      balance:
+        type: integer
+      created_at:
+        type: string
+      email:
+        type: string
+      last_entered_at:
+        type: string
+      user_id:
+        type: integer
+      user_type:
+        type: string
+    type: object
+  dto.GetLogsHistoryOutput:
+    properties:
+      client_id:
+        type: integer
+      commission_amount:
+        type: integer
+      created_at:
+        type: string
+      log_id:
+        type: integer
+      seller_id:
+        type: integer
+      total_amount:
+        type: integer
+    type: object
+  dto.LoginInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      user_type:
+        type: string
+    type: object
+  dto.LoginOutput:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  dto.OfferModerationAnswerInput:
+    properties:
+      message:
+        type: string
+      product_id:
+        type: integer
+    type: object
+  dto.OfferModerationAnswerOutput:
+    properties:
+      message:
+        type: string
+      product_id:
+        type: integer
+    type: object
+  dto.OfferModerationOutput:
+    properties:
+      category_id:
+        type: integer
+      category_name:
+        type: string
+      description:
+        type: string
+      image:
+        type: string
+      price:
+        type: integer
+      product_id:
+        type: integer
+      product_name:
+        type: string
+      quantity:
+        type: integer
+      seller_id:
+        type: integer
+      seller_name:
+        type: string
+      sub_category_id:
+        type: integer
+      sub_category_name:
+        type: string
+    type: object
+  dto.ProductIDOutput:
+    properties:
+      description:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+      product_id:
+        type: integer
+    type: object
+  dto.ProductOutput:
+    properties:
+      description:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+      product_id:
+        type: integer
+      sellers_offers:
+        items:
+          $ref: '#/definitions/dto.SellerOfferOutput'
+        type: array
+    type: object
+  dto.PurchaseSubscriptionOutput:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.RefreshAccessTokenOutput:
+    properties:
+      access_token:
+        type: string
+    type: object
+  dto.RegisterInput:
+    properties:
+      balance:
+        type: integer
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      user_type:
+        type: string
+    type: object
+  dto.RegisterOutput:
+    properties:
+      balance:
+        type: integer
+      email:
+        type: string
+      message:
+        type: string
+      name:
+        type: string
+      user_type:
+        type: string
+    type: object
+  dto.ResetPasswordInput:
+    properties:
+      new_password:
+        type: string
+      userID:
+        format: int64
+        type: integer
+    type: object
+  dto.ResetPasswordOutput:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.SellerOfferItem:
+    properties:
+      description:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+      price:
+        type: integer
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      seller_id:
+        type: integer
+    type: object
+  dto.SellerOfferOutput:
+    properties:
+      price:
+        type: integer
+      quantity:
+        type: integer
+      seller_id:
+        type: integer
+      seller_name:
+        type: string
+    type: object
+  dto.SellerOffersListOutput:
+    properties:
+      offers:
+        items:
+          $ref: '#/definitions/dto.SellerOfferItem'
+        type: array
+    type: object
+  dto.SellerProfileOutput:
+    properties:
+      balance:
+        type: integer
+      email:
+        type: string
+      name:
+        type: string
+      rating:
+        type: number
+      type:
+        type: string
+    type: object
+  dto.SendCodeInput:
+    properties:
+      email:
+        type: string
+      user_type:
+        type: string
+    type: object
+  dto.SendCodeOutput:
+    properties:
+      message:
+        type: string
+    type: object
+  dto.SubCategoryIDOutput:
+    properties:
+      name:
+        type: string
+      products:
+        items:
+          $ref: '#/definitions/dto.ProductIDOutput'
+        type: array
+      sub_category_id:
+        type: integer
+    type: object
+  dto.SubCategoryOutput:
+    properties:
+      name:
+        type: string
+      products:
+        items:
+          $ref: '#/definitions/dto.ProductOutput'
+        type: array
+    type: object
+  dto.UpdateBalanceInput:
+    properties:
+      balance:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  dto.UpdateOfferInput:
+    properties:
+      price:
+        type: integer
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      seller_id:
+        type: integer
+    type: object
+  dto.UpdateOfferOutput:
+    properties:
+      message:
+        type: string
+      price:
+        type: integer
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+    type: object
+  dto.VerifyCodeInput:
+    properties:
+      code:
+        type: string
+      email:
+        type: string
+      user_type:
+        type: string
+    type: object
+  dto.VerifyCodeOutput:
+    properties:
+      message:
+        type: string
+      recovery_token:
+        type: string
+    type: object
+host: localhost:9000
+info:
+  contact: {}
+  description: API сервер для интернет-магазина продуктов FoodStore
+  title: FoodStore API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Вход пользователя по email и паролю, возвращает access и refresh
+        токены
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoginOutput'
+        "400":
+          description: Некорректный JSON или пустые поля
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "401":
+          description: Неверные учётные данные
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      summary: Авторизация пользователя
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Регистрация нового пользователя (client, seller, moderator)
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RegisterOutput'
+        "400":
+          description: Некорректный JSON или пустые поля
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "401":
+          description: Некорректный тип пользователя
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "409":
+          description: Пользователь уже существует
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      summary: Регистрация пользователя
+      tags:
+      - Auth
+  /protected/admin/balance:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет баланс пользователя по user_id
+      parameters:
+      - description: Данные баланса
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateBalanceInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BalanceUpdateOutput'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Обновить баланс пользователя
+      tags:
+      - Admin
+  /protected/admin/logs:
+    get:
+      description: Возвращает все логи финансовых транзакций
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.GetLogsHistoryOutput'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить логи транзакций
+      tags:
+      - Admin
+  /protected/admin/users:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет пользователя по user_id
+      parameters:
+      - description: Данные для удаления
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DeleteUserInput'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/dto.DeleteUserOutput'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Удалить пользователя
+      tags:
+      - Admin
+    get:
+      description: Возвращает список всех пользователей системы
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.GetAllUsersOutput'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить всех пользователей
+      tags:
+      - Admin
+  /protected/client/:
+    get:
+      description: Возвращает продукты, отсортированные по приоритету (продавцы с
+        подпиской выше)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CategoryOutput'
+            type: array
+        "404":
+          description: Продукты не найдены
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить продукты по приоритету
+      tags:
+      - Client
+  /protected/client/address:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новый адрес доставки клиенту
+      parameters:
+      - description: Данные адреса
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddAddressInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AddAddressOutput'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Добавить адрес клиента
+      tags:
+      - Client
+  /protected/client/cart:
+    get:
+      description: Возвращает все товары в корзине клиента
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CartItemOutput'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить содержимое корзины
+      tags:
+      - Client
+    post:
+      consumes:
+      - application/json
+      description: Добавляет товар в корзину клиента
+      parameters:
+      - description: Данные для добавления в корзину
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddToCartInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AddToCartOutput'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Добавить товар в корзину
+      tags:
+      - Client
+  /protected/client/orders:
+    get:
+      description: Возвращает список всех заказов текущего клиента
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ClientOrderOutput'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить заказы клиента
+      tags:
+      - Client
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новый заказ клиента
+      parameters:
+      - description: Данные заказа
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateOrderInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.CreateOrderOutput'
+        "400":
+          description: Некорректный JSON или недостаточно товара
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "404":
+          description: Продукт не найден
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Создать заказ
+      tags:
+      - Client
+  /protected/client/products:
+    get:
+      description: Возвращает полный каталог продуктов по категориям с предложениями
+        продавцов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CategoryOutput'
+            type: array
+        "404":
+          description: Продукты не найдены
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить каталог продуктов
+      tags:
+      - Client
+  /protected/client/products/{product_id}:
+    get:
+      description: Возвращает информацию о продукте по его ID с предложениями продавцов
+      parameters:
+      - description: ID продукта
+        in: path
+        name: product_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ProductOutput'
+        "400":
+          description: Некорректный ID
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "404":
+          description: Продукт не найден
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить продукт по ID
+      tags:
+      - Client
+  /protected/client/profile:
+    get:
+      description: Возвращает профиль текущего авторизованного клиента
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ClientProfileOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить профиль клиента
+      tags:
+      - Client
+  /protected/moderator/approve:
+    post:
+      consumes:
+      - application/json
+      description: Одобряет предложение продавца на модерации
+      parameters:
+      - description: Данные одобрения
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.OfferModerationAnswerInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OfferModerationAnswerOutput'
+        "400":
+          description: Некорректные данные
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "404":
+          description: Предложение не найдено
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Одобрить предложение
+      tags:
+      - Moderator
+  /protected/moderator/offers:
+    get:
+      description: Возвращает список предложений продавцов, ожидающих модерацию
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.OfferModerationOutput'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить предложения на модерацию
+      tags:
+      - Moderator
+  /protected/moderator/products:
+    get:
+      description: Возвращает список всех существующих продуктов для модератора
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CategoryIDOutput'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить существующие продукты
+      tags:
+      - Moderator
+  /protected/moderator/reject:
+    post:
+      consumes:
+      - application/json
+      description: Отклоняет предложение продавца на модерации
+      parameters:
+      - description: Данные отклонения
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.OfferModerationAnswerInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.OfferModerationAnswerOutput'
+        "400":
+          description: Некорректные данные
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "404":
+          description: Предложение не найдено
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Отклонить предложение
+      tags:
+      - Moderator
+  /protected/seller/new-offers:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новый продукт и предложение продавца на него (отправляется
+        на модерацию)
+      parameters:
+      - description: Данные нового продукта и предложения
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateOfferWithNewProductInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CreateOfferWithNewProductOutput'
+        "400":
+          description: Некорректные данные
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Создать предложение с новым продуктом
+      tags:
+      - Seller
+  /protected/seller/offers:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет предложение продавца по product_id
+      parameters:
+      - description: Данные для удаления
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DeleteOfferInput'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/dto.DeleteOfferOutput'
+        "400":
+          description: Некорректные данные
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "404":
+          description: Предложение не найдено
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Удалить предложение
+      tags:
+      - Seller
+    get:
+      description: Возвращает список всех предложений текущего продавца
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SellerOffersListOutput'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить предложения продавца
+      tags:
+      - Seller
+    post:
+      consumes:
+      - application/json
+      description: Создаёт предложение продавца на уже существующий в каталоге продукт
+      parameters:
+      - description: Данные предложения
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateOfferByExistProductsInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CreateOfferByExistProductsOutput'
+        "400":
+          description: Некорректные данные
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Создать предложение на существующий продукт
+      tags:
+      - Seller
+    put:
+      consumes:
+      - application/json
+      description: Обновляет цену и количество в предложении продавца
+      parameters:
+      - description: Данные для обновления
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateOfferInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UpdateOfferOutput'
+        "400":
+          description: Некорректные данные
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "404":
+          description: Предложение не найдено
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Обновить предложение
+      tags:
+      - Seller
+  /protected/seller/products:
+    get:
+      description: Возвращает список всех существующих продуктов с категориями и подкатегориями
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.CategoryIDOutput'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить существующие продукты
+      tags:
+      - Seller
+  /protected/seller/profile:
+    get:
+      description: Возвращает профиль текущего авторизованного продавца
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SellerProfileOutput'
+        "401":
+          description: Невалидный токен
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Получить профиль продавца
+      tags:
+      - Seller
+  /protected/seller/subscription:
+    get:
+      description: Покупка подписки продавца для приоритетного отображения товаров
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PurchaseSubscriptionOutput'
+        "400":
+          description: Недостаточно средств или ошибка подписки
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Купить подписку
+      tags:
+      - Seller
+  /recovery-password/reset:
+    post:
+      consumes:
+      - application/json
+      description: Сбрасывает пароль пользователя (требуется recovery токен)
+      parameters:
+      - description: Новый пароль
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResetPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ResetPasswordOutput'
+        "400":
+          description: Пустые поля
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Сбросить пароль
+      tags:
+      - Recovery
+  /recovery/send-code:
+    post:
+      consumes:
+      - application/json
+      description: Отправляет код восстановления пароля на email пользователя
+      parameters:
+      - description: Данные для отправки кода
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendCodeInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SendCodeOutput'
+        "400":
+          description: Пустые поля
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      summary: Отправить код восстановления
+      tags:
+      - Recovery
+  /recovery/verify-code:
+    post:
+      consumes:
+      - application/json
+      description: Проверяет код восстановления и возвращает recovery токен
+      parameters:
+      - description: Данные для проверки кода
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyCodeInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.VerifyCodeOutput'
+        "400":
+          description: Пустые поля или неверный код
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      summary: Проверить код восстановления
+      tags:
+      - Recovery
+  /refresh-access/token:
+    post:
+      description: Обновляет access токен по refresh токену
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RefreshAccessTokenOutput'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      security:
+      - BearerAuth: []
+      summary: Обновить access токен
+      tags:
+      - Auth
+  /secret/create-admin:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт нового администратора по секретному ключу
+      parameters:
+      - description: Данные администратора
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateAdminInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.CreateAdminOutput'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorOutput'
+      summary: Создать администратора
+      tags:
+      - Admin
+securityDefinitions:
+  BearerAuth:
+    description: 'Введите токен в формате: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
