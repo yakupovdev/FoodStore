@@ -22,4 +22,8 @@ type SellerRepository interface {
 	DeleteOffer(ctx context.Context, params *entity.OfferPrimary) error
 
 	UpdateOffer(ctx context.Context, params *entity.SellerOffer) error
+
+	DecreaseOfferQuantity(ctx context.Context, params *entity.OfferQuantity) error
+
+	PurchaseSubscription(ctx context.Context, params *entity.PurchaseSubscriptionParams) error
 }

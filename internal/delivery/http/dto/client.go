@@ -14,8 +14,8 @@ type CreateOrderItemInputDTO struct {
 }
 
 type UpdateBalanceInput struct {
-	ClientID int64 `json:"client_id"`
-	Balance  int64 `json:"balance"`
+	UserID  int64 `json:"user_id"`
+	Balance int64 `json:"balance"`
 }
 
 type AddAddressInput struct {

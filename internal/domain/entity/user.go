@@ -27,13 +27,12 @@ func NewUser(email, password, userType, name string, balance int64) (*User, erro
 	if password == "" {
 		return nil, domain.ErrEmptyPassword
 	}
-	if userType != "client" && userType != "seller" && userType != "moderator" {
+	if userType != "client" && userType != "seller" && userType != "moderator" && userType != "admin" {
 		return nil, domain.ErrInvalidUserType
 	}
 	if name == "" {
 		return nil, domain.ErrEmptyName
 	}
-
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)

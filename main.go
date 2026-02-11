@@ -60,6 +60,8 @@ func main() {
 	productRepo := impl.NewProductRepo(conn)
 	sellerRepo := impl.NewSellerRepo(conn)
 	transactionRepo := impl.NewTransactionRepository(conn)
+	loggerRepo := impl.NewLogsRepository(conn)
+	adminRepo := impl.NewAdminRepository(conn)
 
 	// Services
 	codeHasher := security.NewSHA256CodeHasher()
@@ -71,12 +73,14 @@ func main() {
 		os.Getenv("EMAIL_HOST"),
 		os.Getenv("EMAIL_PORT"),
 	)
+	checkerAdminKey := security.NewCheckerAdminKey(os.Getenv("SECRET_KEY"))
 
 	// Usecases
 	authUsecase, _ := usecase.NewAuthUsecase(userRepo, tokenRepo, tokenSvc)
 	recoveryUsecase, _ := usecase.NewRecoveryUsecase(userRepo, recoveryCodeRepo, codeHasher, tokenSvc, codeGen, emailSender)
-	clientUsecase, _ := usecase.NewClientUsecase(clientRepo, orderRepo, productRepo, sellerRepo, transactionRepo)
+	clientUsecase, _ := usecase.NewClientUsecase(clientRepo, orderRepo, productRepo, sellerRepo, transactionRepo, loggerRepo)
 	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo, productRepo)
+	adminUsecase, _ := usecase.NewAdminUsecase(userRepo, clientRepo, adminRepo, loggerRepo, checkerAdminKey)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authUsecase)
@@ -85,6 +89,7 @@ func main() {
 	refreshTokenHandler := handler.NewRefreshTokenHandler(authUsecase)
 	clientHandler := handler.NewClientHandler(clientUsecase)
 	sellerHandler := handler.NewSellerHandler(sellerUsecase)
+	adminHandler := handler.NewAdminHandler(adminUsecase)
 
 	// Router
 	r := httpdelivery.SetupRouter(httpdelivery.RouterDeps{
@@ -94,6 +99,7 @@ func main() {
 		RefreshTokenHandler: refreshTokenHandler,
 		ClientHandler:       clientHandler,
 		SellerHandler:       sellerHandler,
+		AdminHandler:        adminHandler,
 		TokenValidator:      authUsecase,
 		TokenService:        tokenSvc,
 	})
@@ -129,6 +135,11 @@ func main() {
 					log.Printf("Error deleting expired access tokens: %v", err)
 				} else {
 					log.Println("Expired access tokens deleted successfully")
+				}
+				if err := adminUsecase.DeleteExpiredSubscription(appCtx); err != nil {
+					log.Printf("Error deleting expired subscriptions: %v", err)
+				} else {
+					log.Println("Expired subscriptions deleted successfully")
 				}
 			}
 		}

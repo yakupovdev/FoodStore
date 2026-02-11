@@ -16,6 +16,7 @@ type RouterDeps struct {
 	RefreshTokenHandler *handler.RefreshTokenHandler
 	ClientHandler       *handler.ClientHandler
 	SellerHandler       *handler.SellerHandler
+	AdminHandler        *handler.AdminHandler
 	TokenValidator      usecase.TokenValidator
 	TokenService        service.TokenService
 }
@@ -39,11 +40,11 @@ func SetupRouter(d RouterDeps) *gin.Engine {
 			client.POST("/orders", d.ClientHandler.CreateOrder)
 			client.GET("/profile", d.ClientHandler.GetProfile)
 			client.GET("/products", d.ClientHandler.GetProducts)
-			client.POST("/balance", d.ClientHandler.UpdateBalance)
 			client.POST("/address", d.ClientHandler.AddAdress)
 			client.POST("/cart", d.ClientHandler.AddToCart)
 			client.GET("/cart", d.ClientHandler.GetCartItems)
 			client.GET("/products/:product_id", d.ClientHandler.GetProductByID)
+			client.GET("/", d.ClientHandler.GetProductsByPriority)
 		}
 
 		seller := protected.Group("/seller")
@@ -56,7 +57,22 @@ func SetupRouter(d RouterDeps) *gin.Engine {
 			seller.DELETE("/offers", d.SellerHandler.DeleteOffer)
 			seller.GET("/products", d.SellerHandler.GetExistProducts)
 			seller.POST("/products", d.SellerHandler.CreateOffer)
+			seller.GET("/subscription", d.SellerHandler.PurchaseSubscription)
 		}
+
+		admin := protected.Group("/admin")
+		admin.Use(middleware.AccessTypeMiddleware("admin"))
+		{
+			admin.DELETE("/users", d.AdminHandler.DeleteUser)
+			admin.POST("/balance", d.AdminHandler.UpdateBalance)
+			admin.GET("/logs", d.AdminHandler.GetAllLogTransactions)
+			admin.GET("/users", d.AdminHandler.GetAllUsers)
+		}
+	}
+
+	secret := router.Group("/secret")
+	{
+		secret.POST("/create-admin", d.AdminHandler.CreateAdmin)
 	}
 
 	recovery := router.Group("/recovery")

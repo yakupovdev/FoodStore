@@ -71,7 +71,6 @@ func (r *SellerRepo) GetOffersByProductID(ctx context.Context, productID int64) 
 		JOIN products p ON so.product_id = p.product_id
 		JOIN sellers s ON s.seller_id = so.seller_id
 		WHERE p.product_id = $1`
-
 	rows, err := r.conn.Query(ctx, stmtOffers, productID)
 	if err != nil {
 		return make([]entity.Offer, 0), fmt.Errorf("query offers: %w", err)
@@ -87,7 +86,7 @@ func (r *SellerRepo) GetOffersByProductID(ctx context.Context, productID int64) 
 		offers = append(offers, o)
 	}
 	if len(offers) == 0 {
-		return make([]entity.Offer, 0), errors.New("no offers")
+		return make([]entity.Offer, 0), domain.ErrOfferNotFound
 	}
 	return offers, nil
 }
@@ -302,8 +301,8 @@ func (r *SellerRepo) DeleteOffer(ctx context.Context, params *entity.OfferPrimar
 }
 
 func (r *SellerRepo) DecreaseOfferQuantity(ctx context.Context, params *entity.OfferQuantity) error {
-	stmt := `UPDATE seller_offers SET quantity = quantity - $1`
-	cmdTag, err := r.conn.Exec(ctx, stmt, params)
+	stmt := `UPDATE seller_offers SET quantity = quantity - $1 WHERE seller_id = $2 AND product_id = $3`
+	cmdTag, err := r.conn.Exec(ctx, stmt, params.DecreasingNumberOfQuantity, params.SellerID, params.ProductID)
 	if err != nil {
 		log.Println(err)
 		return fmt.Errorf("decrease offer_quantity: %w", err)
@@ -311,5 +310,33 @@ func (r *SellerRepo) DecreaseOfferQuantity(ctx context.Context, params *entity.O
 	if cmdTag.RowsAffected() == 0 {
 		return domain.ErrOfferNotFound
 	}
+	return nil
+}
+
+func (r *SellerRepo) PurchaseSubscription(ctx context.Context, params *entity.PurchaseSubscriptionParams) error {
+	stmt := `UPDATE users SET balance = balance - $1 WHERE userid = $2`
+	cmdTag, err := r.conn.Exec(ctx, stmt, params.Price, params.ID)
+	if err != nil {
+		log.Println(err)
+		return domain.ErrNotEnoughBalance
+	}
+	if cmdTag.RowsAffected() == 0 {
+		return domain.ErrUserNotFound
+	}
+
+	stmtInsert := `INSERT INTO subscriptions (seller_id, created_at) VALUES ($1, NOW())`
+	_, err = r.conn.Exec(ctx, stmtInsert, params.ID)
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("purchase subscription: %w", err)
+	}
+
+	stmtInsertPriority := `UPDATE sellers SET priority = 1 WHERE seller_id = $1`
+	_, err = r.conn.Exec(ctx, stmtInsertPriority, params.ID)
+	if err != nil {
+		log.Println(err)
+		return fmt.Errorf("purchase subscription: %w", err)
+	}
+
 	return nil
 }

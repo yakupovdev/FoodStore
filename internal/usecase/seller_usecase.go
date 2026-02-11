@@ -198,3 +198,19 @@ func (uc *SellerUsecase) DeleteOffer(ctx context.Context, input dto.DeleteOfferI
 		ProductID: offerPrimary.ProductID,
 	}, nil
 }
+
+func (uc *SellerUsecase) PurchaseSubscription(ctx context.Context, input dto.PurchaseSubscriptionInput) (*dto.PurchaseSubscriptionOutput, error) {
+	params := &entity.PurchaseSubscriptionParams{
+		ID:    input.ID,
+		Price: 10000,
+	}
+
+	err := uc.sellerRepo.PurchaseSubscription(ctx, params)
+	if err != nil {
+		return nil, domain.ErrSubscriptionNotFound
+	}
+
+	return &dto.PurchaseSubscriptionOutput{
+		Message: "Subscription purchased successfully",
+	}, nil
+}
