@@ -183,3 +183,32 @@ func (h *SellerHandler) CreateOfferWithNewProduct(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, output)
 }
+
+func (h *SellerHandler) PurchaseSubscription(ctx *gin.Context) {
+    uid, ok := extractUserID(ctx)
+    if !ok {
+        ctx.JSON(ErrInvalidToken.Status, ErrInvalidToken.Response)
+        return
+    }
+
+    var req dto.PurchaseSubscriptionInput
+    req = dto.PurchaseSubscriptionInput{
+        ID: uid,
+    }
+
+    output, err := h.uc.PurchaseSubscription(ctx.Request.Context(), req)
+    if err != nil {
+        switch {
+        case errors.Is(err, domain.ErrSubscriptionNotFound):
+            ctx.JSON(ErrSubscriptionNotFound.Status, ErrSubscriptionNotFound.Response)
+        case errors.Is(err, domain.ErrNotEnoughBalance):
+            ctx.JSON(ErrNotEnoughBalance.Status, ErrNotEnoughBalance.Response)
+        default:
+            ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+        }
+        return
+    }
+
+    ctx.JSON(http.StatusOK, output)
+}
+

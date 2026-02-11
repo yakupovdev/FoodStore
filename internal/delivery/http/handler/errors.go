@@ -23,4 +23,7 @@ var (
 	ErrInvalidID            = HTTPError{Status: 400, Response: dto.ErrorOutput{Error: "invalid ID"}}
 	ErrNoProducts           = HTTPError{Status: 404, Response: dto.ErrorOutput{Error: "no products found"}}
 	ErrOfferNotFound        = HTTPError{Status: 404, Response: dto.ErrorOutput{Error: "offer not found"}}
+	ErrNotEnoughQuantity    = HTTPError{Status: 400, Response: dto.ErrorOutput{Error: "not enough quantity available"}}
+	ErrNotEnoughBalance     = HTTPError{Status: 400, Response: dto.ErrorOutput{Error: "not enough balance to complete the subscription"}}
+	ErrSubscriptionNotFound = HTTPError{Status: 400, Response: dto.ErrorOutput{Error: "subscription failed, try again later,check your balance or contact support"}}
 )

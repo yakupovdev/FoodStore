@@ -39,6 +39,10 @@ type CreateOfferInput struct {
 	SubCategoryName string `json:"sub_category_name"`
 }
 
+type PurchaseSubscriptionInput struct {
+	ID int64 `json:"id"`
+}
+
 type CreateOfferOutput struct {
 	Message         string `json:"message"`
 	ProductName     string `json:"product_name"`
@@ -112,4 +116,8 @@ type CreateOfferWithNewProductOutput struct {
 	Image         string `json:"image"`
 	Price         int64  `json:"price"`
 	Quantity      int64  `json:"quantity"`
+}
+
+type PurchaseSubscriptionOutput struct {
+	Message string `json:"message"`
 }

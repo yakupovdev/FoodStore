@@ -18,4 +18,8 @@ type UserRepository interface {
 	UpdatePassword(ctx context.Context, userID int64, passwordHash string) error
 
 	UpdateLastLogin(ctx context.Context, userID int64) error
+
+	Delete(ctx context.Context, userID int64) error
+
+	GetAllUsers(ctx context.Context) ([]entity.User, error)
 }

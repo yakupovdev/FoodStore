@@ -25,3 +25,7 @@ type EmailSender interface {
 
 	SendMessage(emailTo, message string) error
 }
+
+type CheckerAdminKey interface {
+	CheckAdminKey(key string) bool
+}

@@ -100,7 +100,14 @@ func (h *ClientHandler) CreateOrder(ctx *gin.Context) {
 
 	output, err := h.uc.CreateOrder(ctx.Request.Context(), input)
 	if err != nil {
-		log.Println(err, "error creating order in CreateOrder")
+		if err == domain.ErrNoProducts {
+			ctx.JSON(ErrNoProducts.Status, ErrNoProducts.Response)
+			return
+		}
+		if err == domain.ErrNotEnoughQuantity {
+			ctx.JSON(ErrNotEnoughQuantity.Status, ErrNotEnoughQuantity.Response)
+			return
+		}
 		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
 		return
 	}
@@ -128,30 +135,20 @@ func (h *ClientHandler) GetOrders(ctx *gin.Context) {
 func (h *ClientHandler) GetProducts(ctx *gin.Context) {
 	categories, err := h.uc.GetProducts(ctx.Request.Context())
 	if err != nil {
+		if err == domain.ErrNoProducts {
+			ctx.JSON(ErrNoProducts.Status, ErrNoProducts.Response)
+			return
+		}
+		if err == domain.ErrOfferNotFound {
+			ctx.JSON(ErrOfferNotFound.Status, ErrOfferNotFound.Response)
+			return
+		}
+		log.Println(err)
 		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
 		return
 	}
 
 	ctx.JSON(http.StatusOK, categories)
-}
-
-func (h *ClientHandler) UpdateBalance(ctx *gin.Context) {
-	var input dto.UpdateBalanceInput
-	if err := ctx.ShouldBindJSON(&input); err != nil {
-		ctx.JSON(ErrInvalidJSON.Status, ErrInvalidJSON.Response)
-		return
-	}
-
-	clientID := ctx.GetInt64("user_id")
-	input.ClientID = clientID
-
-	balanceUpdated, err := h.uc.UpdateBalance(ctx.Request.Context(), input)
-	if err != nil {
-		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
-		return
-	}
-
-	ctx.JSON(http.StatusOK, balanceUpdated)
 }
 
 func (h *ClientHandler) AddAdress(ctx *gin.Context) {
@@ -171,4 +168,19 @@ func (h *ClientHandler) AddAdress(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, output)
+}
+
+func (h *ClientHandler) GetProductsByPriority(ctx *gin.Context) {
+	products, err := h.uc.GetProductsByPriority(ctx.Request.Context())
+	if err != nil {
+		if err == domain.ErrNoProducts {
+			ctx.JSON(ErrNoProducts.Status, ErrNoProducts.Response)
+			return
+		}
+		log.Println(err)
+		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, products)
 }

@@ -17,6 +17,7 @@ type ClientUsecase struct {
 	productRepo     repository.ProductRepository
 	sellerRepo      repository.SellerRepository
 	transactionRepo repository.TransactionRepository
+	logRepo         repository.LogsRepository
 }
 
 func NewClientUsecase(
@@ -25,8 +26,9 @@ func NewClientUsecase(
 	productRepo repository.ProductRepository,
 	sellerRepo repository.SellerRepository,
 	transactionRepo repository.TransactionRepository,
+	logRepo repository.LogsRepository,
 ) (*ClientUsecase, error) {
-	if clientRepo == nil || orderRepo == nil || productRepo == nil {
+	if clientRepo == nil || orderRepo == nil || productRepo == nil || sellerRepo == nil || transactionRepo == nil || logRepo == nil {
 		return nil, domain.ErrDatabaseConnection
 	}
 	return &ClientUsecase{
@@ -35,6 +37,7 @@ func NewClientUsecase(
 		productRepo:     productRepo,
 		sellerRepo:      sellerRepo,
 		transactionRepo: transactionRepo,
+		logRepo:         logRepo,
 	}, nil
 }
 
@@ -111,13 +114,33 @@ func (uc *ClientUsecase) CreateOrder(ctx context.Context, input dto.CreateOrderI
 		ClientID: input.ClientID,
 		Status:   "pending",
 	}
+	balance, err := uc.clientRepo.GetBalance(ctx, input.ClientID)
+	if err != nil {
+		log.Println(err, "error getting client balance in CreateOrder usecase")
+		return nil, fmt.Errorf("get client balance: %w", err)
+	}
+	var totalAmount int64
+	for _, item := range input.Items {
+		offer, err := uc.sellerRepo.GetOffersBySellerIDAndProductID(ctx, item.SellerID, item.ProductID)
+		if err != nil {
+			log.Println(err, "error getting offer price in CreateOrder usecase")
+			return nil, domain.ErrNoProducts
+		}
+		totalAmount += offer.Price * int64(item.Quantity)
+	}
+	if balance < totalAmount {
+		return nil, fmt.Errorf("not enough balance")
+	}
 	count := 0
 	for _, item := range input.Items {
 
 		offer, err := uc.sellerRepo.GetOffersBySellerIDAndProductID(ctx, item.SellerID, item.ProductID)
 		if err != nil {
 			log.Println(err, "error getting offer price in CreateOrder usecase")
-			return nil, fmt.Errorf("get offer price: %w", err)
+			return nil, domain.ErrOfferNotFound
+		}
+		if offer.Quantity < item.Quantity {
+			return nil, domain.ErrNotEnoughQuantity
 		}
 
 		totalAmount := item.Quantity * offer.Price
@@ -126,7 +149,17 @@ func (uc *ClientUsecase) CreateOrder(ctx context.Context, input dto.CreateOrderI
 			log.Println(err, "error executing seller transaction in CreateOrder usecase")
 			return nil, fmt.Errorf("execute seller transaction: %w", err)
 		}
-		log.Println("seller transaction executed successfully for seller ID:", item.SellerID)
+		logTransaction := entity.LogTransaction{
+			ClientID:         input.ClientID,
+			SellerID:         item.SellerID,
+			TotalAmount:      totalAmount,
+			CommissionAmount: totalAmount / 20,
+		}
+		if err := uc.logRepo.LogTransaction(ctx, logTransaction); err != nil {
+			log.Println(err, "error logging transaction in CreateOrder usecase")
+			return nil, fmt.Errorf("log transaction: %w", err)
+		}
+
 		order.Items = append(order.Items, entity.OrderItem{
 			SellerID:        item.SellerID,
 			ProductID:       item.ProductID,
@@ -134,6 +167,13 @@ func (uc *ClientUsecase) CreateOrder(ctx context.Context, input dto.CreateOrderI
 			PriceAtPurchase: offer.Price,
 		})
 		count++
+		offerQuantity := &entity.OfferQuantity{
+			SellerID:                   offer.SellerID,
+			ProductID:                  item.ProductID,
+			DecreasingNumberOfQuantity: item.Quantity,
+		}
+
+		err = uc.sellerRepo.DecreaseOfferQuantity(ctx, offerQuantity)
 	}
 
 	if err := uc.orderRepo.Create(ctx, order); err != nil {
@@ -158,7 +198,7 @@ func (uc *ClientUsecase) CreateOrder(ctx context.Context, input dto.CreateOrderI
 		totalCost += priceAtPurchase * int64(item.Quantity)
 	}
 
-	err := uc.transactionRepo.ExecuteOrderTransaction(ctx, input.ClientID, totalCost)
+	err = uc.transactionRepo.ExecuteOrderTransaction(ctx, input.ClientID, totalCost)
 	if err != nil {
 		if err == domain.ErrNotEnoughBalance {
 			return nil, fmt.Errorf("not enough balance: %w", err)
@@ -267,12 +307,18 @@ func (uc *ClientUsecase) GetProducts(ctx context.Context) ([]dto.CategoryOutput,
 			var productDTOs []dto.ProductOutput
 			for _, product := range products {
 				offers, err := uc.sellerRepo.GetOffersByProductID(ctx, product.ID)
+				if offers == nil {
+					return nil, domain.ErrOfferNotFound
+				}
 				if err != nil {
 					return nil, err
 				}
 
 				var offerDTOs []dto.SellerOfferOutput
 				for _, offer := range offers {
+					if offer.Quantity <= 0 {
+						continue
+					}
 					offerDTOs = append(offerDTOs, dto.SellerOfferOutput{
 						SellerID:   offer.SellerID,
 						SellerName: offer.SellerName,
@@ -305,13 +351,31 @@ func (uc *ClientUsecase) GetProducts(ctx context.Context) ([]dto.CategoryOutput,
 	return result, nil
 }
 
-func (uc *ClientUsecase) UpdateBalance(ctx context.Context, input dto.UpdateBalanceInput) (*dto.BalanceUpdateOutput, error) {
-	if err := uc.clientRepo.UpdateBalance(ctx, input.ClientID, input.Balance); err != nil {
-		return &dto.BalanceUpdateOutput{}, fmt.Errorf("update balance: %w", err)
+func (uc *ClientUsecase) GetProductsByPriority(ctx context.Context) ([]dto.ProductOutput, error) {
+	priorityProducts, err := uc.productRepo.GetProductsByPrioity(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return &dto.BalanceUpdateOutput{
-		Message: "balance updated successfully",
-	}, nil
+
+	var result []dto.ProductOutput
+	for _, pp := range priorityProducts {
+		result = append(result, dto.ProductOutput{
+			ProductID:   pp.ID,
+			Name:        pp.ProductName,
+			Description: pp.Description,
+			Image:       pp.Img,
+			Offers: []dto.SellerOfferOutput{
+				{
+					SellerID:   pp.SellerID,
+					SellerName: pp.SellerName,
+					Price:      pp.Price,
+					Quantity:   pp.Quantity,
+				},
+			},
+		})
+	}
+
+	return result, nil
 }
 
 func (uc *ClientUsecase) AddAddress(ctx context.Context, input dto.AddAddressInput) (*dto.AddAddressOutput, error) {

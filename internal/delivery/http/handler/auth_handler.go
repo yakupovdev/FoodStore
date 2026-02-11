@@ -32,7 +32,7 @@ func (h *AuthHandler) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	if lowerUserType := strings.ToLower(req.UserType); lowerUserType != "client" && lowerUserType != "seller" && lowerUserType != "moderator" {
+	if lowerUserType := strings.ToLower(req.UserType); lowerUserType != "client" && lowerUserType != "seller" && lowerUserType != "moderator" && lowerUserType != "admin" {
 		ctx.JSON(ErrInvalidUserType.Status, ErrInvalidUserType.Response)
 		return
 	}

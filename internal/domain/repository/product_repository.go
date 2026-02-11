@@ -22,4 +22,6 @@ type ProductRepository interface {
 	GetSubCategoryNameByID(ctx context.Context, categoryID int64) (string, error)
 
 	GetCategoryNameByID(ctx context.Context, categoryID int64) (string, error)
+  
+	GetProductsByPrioity(ctx context.Context) ([]entity.PriorityProduct, error)
 }

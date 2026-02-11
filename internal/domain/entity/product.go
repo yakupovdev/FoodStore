@@ -48,3 +48,15 @@ func NewCreationProduct(categoryID int64, name string, description string, image
 		Image:       image,
 	}, nil
 }
+
+type PriorityProduct struct {
+	SellerID    int64
+	SellerName  string
+	Priority    int64
+	ID          int64
+	ProductName string
+	Description string
+	Price       int64
+	Quantity    int64
+	Img         string
+}

@@ -17,6 +17,7 @@ type RouterDeps struct {
 	ClientHandler       *handler.ClientHandler
 	SellerHandler       *handler.SellerHandler
 	ModeratorHandler    *handler.ModeratorHandler
+	AdminHandler        *handler.AdminHandler
 	TokenValidator      usecase.TokenValidator
 	TokenService        service.TokenService
 }
@@ -29,6 +30,7 @@ func NewRouterDeps(
 	clientHandler *handler.ClientHandler,
 	sellerHandler *handler.SellerHandler,
 	moderatorHandler *handler.ModeratorHandler,
+  adminHandler        *handler.AdminHandler,
 	tokenValidator usecase.TokenValidator,
 	tokenService service.TokenService,
 ) *RouterDeps {
@@ -40,6 +42,7 @@ func NewRouterDeps(
 		ClientHandler:       clientHandler,
 		SellerHandler:       sellerHandler,
 		ModeratorHandler:    moderatorHandler,
+    AdminHandler:        adminHandler,
 		TokenValidator:      tokenValidator,
 		TokenService:        tokenService,
 	}
@@ -64,11 +67,11 @@ func SetupRouter(d *RouterDeps) *gin.Engine {
 			client.POST("/orders", d.ClientHandler.CreateOrder)
 			client.GET("/profile", d.ClientHandler.GetProfile)
 			client.GET("/products", d.ClientHandler.GetProducts)
-			client.POST("/balance", d.ClientHandler.UpdateBalance)
 			client.POST("/address", d.ClientHandler.AddAdress)
 			client.POST("/cart", d.ClientHandler.AddToCart)
 			client.GET("/cart", d.ClientHandler.GetCartItems)
 			client.GET("/products/:product_id", d.ClientHandler.GetProductByID)
+			client.GET("/", d.ClientHandler.GetProductsByPriority)
 		}
 
 		seller := protected.Group("/seller")
@@ -81,6 +84,7 @@ func SetupRouter(d *RouterDeps) *gin.Engine {
 			seller.DELETE("/offers", d.SellerHandler.DeleteOffer)
 			seller.POST("/new-offers", d.SellerHandler.CreateOfferWithNewProduct)
 			seller.GET("/products", d.SellerHandler.GetExistProducts)
+      seller.GET("/subscription", d.SellerHandler.PurchaseSubscription)
 		}
 
 		moderator := protected.Group("/moderator")
@@ -91,6 +95,20 @@ func SetupRouter(d *RouterDeps) *gin.Engine {
 			moderator.POST("/approve", d.ModeratorHandler.ApproveOffer)
 			moderator.POST("/reject", d.ModeratorHandler.RejectOffer)
 		}
+
+		admin := protected.Group("/admin")
+		admin.Use(middleware.AccessTypeMiddleware("admin"))
+		{
+			admin.DELETE("/users", d.AdminHandler.DeleteUser)
+			admin.POST("/balance", d.AdminHandler.UpdateBalance)
+			admin.GET("/logs", d.AdminHandler.GetAllLogTransactions)
+			admin.GET("/users", d.AdminHandler.GetAllUsers)
+		}
+	}
+
+	secret := router.Group("/secret")
+	{
+		secret.POST("/create-admin", d.AdminHandler.CreateAdmin)
 	}
 
 	recovery := router.Group("/recovery")

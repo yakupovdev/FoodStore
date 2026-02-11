@@ -180,3 +180,49 @@ func (r *ProductRepo) GetParentID(ctx context.Context, categoryID int64) (int64,
 
 	return parentID, nil
 }
+
+func (r *ProductRepo) GetProductsByPrioity(ctx context.Context) ([]entity.PriorityProduct, error) {
+	stmt := `SELECT 
+    so.seller_id,
+    s.name AS seller_name,
+    s.priority,
+    so.product_id,
+    p.name AS product_name,
+    p.description,
+    so.price,
+    so.quantity,
+    p.img
+	FROM seller_offers so
+	INNER JOIN sellers s 
+    ON so.seller_id = s.seller_id
+	INNER JOIN products p 
+    ON so.product_id = p.product_id
+	WHERE s.priority = 1 and so.quantity <> 0;`
+
+	rows, err := r.conn.Query(ctx, stmt)
+	if err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("get products by priority: %w", err)
+	}
+	defer rows.Close()
+
+	var priorityProducts []entity.PriorityProduct
+	for rows.Next() {
+		var pp entity.PriorityProduct
+		if err := rows.Scan(&pp.SellerID, &pp.SellerName, &pp.Priority, &pp.ID, &pp.ProductName, &pp.Description, &pp.Price, &pp.Quantity, &pp.Img); err != nil {
+			log.Println(err)
+			return nil, fmt.Errorf("get products by priority: %w", err)
+		}
+		priorityProducts = append(priorityProducts, pp)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println(err)
+		return nil, fmt.Errorf("get products by priority: %w", err)
+	}
+	if len(priorityProducts) == 0 {
+		return nil, domain.ErrNoProducts
+	}
+
+	return priorityProducts, nil
+}

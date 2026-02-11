@@ -115,16 +115,6 @@ func (r *ClientRepo) GetBalance(ctx context.Context, clientID int64) (int64, err
 	return balance, nil
 }
 
-func (r *ClientRepo) UpdateBalance(ctx context.Context, clientID int64, newBalance int64) error {
-	stmt := `UPDATE users SET balance = balance + $1 WHERE userid=$2`
-	_, err := r.conn.Exec(ctx, stmt, newBalance, clientID)
-	if err != nil {
-		log.Println(err)
-		return fmt.Errorf("update client balance: %w", err)
-	}
-	return nil
-}
-
 func (r *ClientRepo) AddAddress(ctx context.Context, client entity.Client) error {
 	stmt := `UPDATE clients SET address=$1 WHERE client_id=$2`
 	_, err := r.conn.Exec(ctx, stmt, client.Address, client.ID)
