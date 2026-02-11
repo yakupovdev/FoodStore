@@ -60,28 +60,6 @@ func (h *SellerHandler) GetExistProducts(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, products)
 }
 
-func (h *SellerHandler) CreateOffer(ctx *gin.Context) {
-	uid, ok := extractUserID(ctx)
-	if !ok {
-		ctx.JSON(ErrInvalidToken.Status, ErrInvalidToken.Response)
-		return
-	}
-
-	var req dto.CreateOfferInput
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(ErrInvalidJSON.Status, ErrInvalidJSON.Response)
-		return
-	}
-
-	output, err := h.uc.CreateOffer(ctx.Request.Context(), req, uid)
-	if err != nil {
-		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
-		return
-	}
-
-	ctx.JSON(http.StatusCreated, output)
-}
-
 func (h *SellerHandler) CreateOfferByExistProducts(ctx *gin.Context) {
 	var req dto.CreateOfferByExistProductsInput
 
@@ -170,30 +148,67 @@ func (h *SellerHandler) DeleteOffer(ctx *gin.Context) {
 	ctx.JSON(http.StatusNoContent, output)
 }
 
-func (h *SellerHandler) PurchaseSubscription(ctx *gin.Context) {
+func (h *SellerHandler) CreateOfferWithNewProduct(ctx *gin.Context) {
 	uid, ok := extractUserID(ctx)
 	if !ok {
 		ctx.JSON(ErrInvalidToken.Status, ErrInvalidToken.Response)
 		return
 	}
 
-	var req dto.PurchaseSubscriptionInput
-	req = dto.PurchaseSubscriptionInput{
-		ID: uid,
+	var req dto.CreateOfferWithNewProductInput
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(ErrInvalidJSON.Status, ErrInvalidJSON.Response)
+		return
 	}
 
-	output, err := h.uc.PurchaseSubscription(ctx.Request.Context(), req)
+	req.SellerID = uid
+	output, err := h.uc.CreateOfferWithNewProduct(ctx.Request.Context(), req)
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrSubscriptionNotFound):
-			ctx.JSON(ErrSubscriptionNotFound.Status, ErrSubscriptionNotFound.Response)
-		case errors.Is(err, domain.ErrNotEnoughBalance):
-			ctx.JSON(ErrNotEnoughBalance.Status, ErrNotEnoughBalance.Response)
+		case errors.Is(err, domain.ErrSubCategoryID) ||
+			errors.Is(err, domain.ErrSubCategoryNotFound) ||
+			errors.Is(err, domain.ErrCategoryNotFound) ||
+			errors.Is(err, domain.ErrInvalidPrice) ||
+			errors.Is(err, domain.ErrInvalidQuantity) ||
+			errors.Is(err, domain.ErrInvalidProductName) ||
+			errors.Is(err, domain.ErrInvalidDescription) ||
+			errors.Is(err, domain.ErrInvalidQuantity) ||
+			errors.Is(err, domain.ErrInvalidPrice):
+			ctx.JSON(ErrInvalidData.Status, ErrInvalidData.Response)
 		default:
 			ctx.JSON(ErrInternal.Status, ErrInternal.Response)
 		}
 		return
 	}
 
-	ctx.JSON(http.StatusOK, output)
+	ctx.JSON(http.StatusCreated, output)
 }
+
+func (h *SellerHandler) PurchaseSubscription(ctx *gin.Context) {
+    uid, ok := extractUserID(ctx)
+    if !ok {
+        ctx.JSON(ErrInvalidToken.Status, ErrInvalidToken.Response)
+        return
+    }
+
+    var req dto.PurchaseSubscriptionInput
+    req = dto.PurchaseSubscriptionInput{
+        ID: uid,
+    }
+
+    output, err := h.uc.PurchaseSubscription(ctx.Request.Context(), req)
+    if err != nil {
+        switch {
+        case errors.Is(err, domain.ErrSubscriptionNotFound):
+            ctx.JSON(ErrSubscriptionNotFound.Status, ErrSubscriptionNotFound.Response)
+        case errors.Is(err, domain.ErrNotEnoughBalance):
+            ctx.JSON(ErrNotEnoughBalance.Status, ErrNotEnoughBalance.Response)
+        default:
+            ctx.JSON(ErrInternal.Status, ErrInternal.Response)
+        }
+        return
+    }
+
+    ctx.JSON(http.StatusOK, output)
+}
+

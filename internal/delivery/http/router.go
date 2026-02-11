@@ -16,12 +16,39 @@ type RouterDeps struct {
 	RefreshTokenHandler *handler.RefreshTokenHandler
 	ClientHandler       *handler.ClientHandler
 	SellerHandler       *handler.SellerHandler
+	ModeratorHandler    *handler.ModeratorHandler
 	AdminHandler        *handler.AdminHandler
 	TokenValidator      usecase.TokenValidator
 	TokenService        service.TokenService
 }
 
-func SetupRouter(d RouterDeps) *gin.Engine {
+func NewRouterDeps(
+	authHandler *handler.AuthHandler,
+	emailHandler *handler.EmailHandler,
+	recoveryHandler *handler.RecoveryHandler,
+	refreshTokenHandler *handler.RefreshTokenHandler,
+	clientHandler *handler.ClientHandler,
+	sellerHandler *handler.SellerHandler,
+	moderatorHandler *handler.ModeratorHandler,
+  adminHandler        *handler.AdminHandler,
+	tokenValidator usecase.TokenValidator,
+	tokenService service.TokenService,
+) *RouterDeps {
+	return &RouterDeps{
+		AuthHandler:         authHandler,
+		EmailHandler:        emailHandler,
+		RecoveryHandler:     recoveryHandler,
+		RefreshTokenHandler: refreshTokenHandler,
+		ClientHandler:       clientHandler,
+		SellerHandler:       sellerHandler,
+		ModeratorHandler:    moderatorHandler,
+    AdminHandler:        adminHandler,
+		TokenValidator:      tokenValidator,
+		TokenService:        tokenService,
+	}
+}
+
+func SetupRouter(d *RouterDeps) *gin.Engine {
 	router := gin.Default()
 
 	auth := router.Group("/auth")
@@ -55,9 +82,18 @@ func SetupRouter(d RouterDeps) *gin.Engine {
 			seller.POST("/offers", d.SellerHandler.CreateOfferByExistProducts)
 			seller.PUT("/offers", d.SellerHandler.UpdateOffer)
 			seller.DELETE("/offers", d.SellerHandler.DeleteOffer)
+			seller.POST("/new-offers", d.SellerHandler.CreateOfferWithNewProduct)
 			seller.GET("/products", d.SellerHandler.GetExistProducts)
-			seller.POST("/products", d.SellerHandler.CreateOffer)
-			seller.GET("/subscription", d.SellerHandler.PurchaseSubscription)
+      seller.GET("/subscription", d.SellerHandler.PurchaseSubscription)
+		}
+
+		moderator := protected.Group("/moderator")
+		moderator.Use(middleware.AccessTypeMiddleware("moderator"))
+		{
+			moderator.GET("/products", d.ModeratorHandler.GetExistProducts)
+			moderator.GET("/offers", d.ModeratorHandler.GetModerationSellerOffers)
+			moderator.POST("/approve", d.ModeratorHandler.ApproveOffer)
+			moderator.POST("/reject", d.ModeratorHandler.RejectOffer)
 		}
 
 		admin := protected.Group("/admin")

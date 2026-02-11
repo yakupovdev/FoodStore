@@ -2,6 +2,7 @@ package impl
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -101,13 +102,83 @@ func (r *ProductRepo) GetProductByID(ctx context.Context, productID int64) (*ent
 	var product entity.Product
 	if err := row.Scan(&product.ID, &product.Name, &product.Description, &product.Image); err != nil {
 		log.Println(err)
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return nil, domain.ErrNoProducts
 		}
 		return nil, fmt.Errorf("get product by id: %w", err)
 	}
 
 	return &product, nil
+}
+
+func (r *ProductRepo) CreateProduct(ctx context.Context, product *entity.CreationProduct) (int64, error) {
+	stmt := `
+		INSERT INTO products (name, description, img, categories_id)
+		VALUES ($1, $2, $3, $4)
+		RETURNING product_id
+	`
+
+	var productID int64
+	err := r.conn.
+		QueryRow(ctx, stmt,
+			product.Name,
+			product.Description,
+			product.Image,
+			product.CategoryID,
+		).
+		Scan(&productID)
+
+	if err != nil {
+		log.Println(err)
+		return 0, fmt.Errorf("create product: %w", err)
+	}
+
+	return productID, nil
+}
+
+func (r *ProductRepo) GetCategoryNameByID(ctx context.Context, categoryID int64) (string, error) {
+	stmt := `SELECT name FROM categories WHERE categories_id=$1 AND parent_id IS NULL`
+
+	var name string
+	err := r.conn.QueryRow(ctx, stmt, categoryID).Scan(&name)
+	if err != nil {
+		log.Println(err)
+		if errors.Is(err, pg.ErrNoRows) {
+			return "", domain.ErrCategoryNotFound
+		}
+	}
+
+	return name, nil
+}
+
+func (r *ProductRepo) GetSubCategoryNameByID(ctx context.Context, categoryID int64) (string, error) {
+	stmt := `SELECT name FROM categories WHERE categories_id=$1 AND parent_id IS NOT NULL`
+
+	var name string
+	err := r.conn.QueryRow(ctx, stmt, categoryID).Scan(&name)
+	if err != nil {
+		log.Println(err)
+		if errors.Is(err, pg.ErrNoRows) {
+			return "", domain.ErrSubCategoryNotFound
+		}
+	}
+
+	return name, nil
+}
+
+func (r *ProductRepo) GetParentID(ctx context.Context, categoryID int64) (int64, error) {
+	stmt := `SELECT parent_id FROM categories WHERE categories_id=$1 AND parent_id IS NOT NULL`
+
+	var parentID int64
+	err := r.conn.QueryRow(ctx, stmt, categoryID).Scan(&parentID)
+	if err != nil {
+		log.Println(err)
+		if errors.Is(err, pg.ErrNoRows) {
+			return 0, domain.ErrSubCategoryNotFound
+		}
+	}
+
+	return parentID, nil
 }
 
 func (r *ProductRepo) GetProductsByPrioity(ctx context.Context) ([]entity.PriorityProduct, error) {

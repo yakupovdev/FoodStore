@@ -22,6 +22,8 @@ type CodeGenerator interface {
 
 type EmailSender interface {
 	SendRecoveryCode(ctx context.Context, email, code string) error
+
+	SendMessage(emailTo, message string) error
 }
 
 type CheckerAdminKey interface {

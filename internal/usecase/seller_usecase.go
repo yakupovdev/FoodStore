@@ -11,17 +11,19 @@ import (
 )
 
 type SellerUsecase struct {
-	sellerRepo  repository.SellerRepository
-	productRepo repository.ProductRepository
+	sellerRepo    repository.SellerRepository
+	productRepo   repository.ProductRepository
+	moderatorRepo repository.ModeratorRepository
 }
 
-func NewSellerUsecase(sellerRepo repository.SellerRepository, productRepo repository.ProductRepository) (*SellerUsecase, error) {
-	if sellerRepo == nil || productRepo == nil {
+func NewSellerUsecase(sellerRepo repository.SellerRepository, productRepo repository.ProductRepository, moderatorRepository repository.ModeratorRepository) (*SellerUsecase, error) {
+	if sellerRepo == nil || productRepo == nil || moderatorRepository == nil {
 		return nil, domain.ErrDatabaseConnection
 	}
 	return &SellerUsecase{
-		sellerRepo:  sellerRepo,
-		productRepo: productRepo,
+		sellerRepo:    sellerRepo,
+		productRepo:   productRepo,
+		moderatorRepo: moderatorRepository,
 	}, nil
 }
 
@@ -110,39 +112,68 @@ func (uc *SellerUsecase) GetAllExistProducts(ctx context.Context) ([]dto.Categor
 	return result, nil
 }
 
-func (uc *SellerUsecase) CreateOffer(ctx context.Context, input dto.CreateOfferInput, sellerID int64) (*dto.CreateOfferOutput, error) {
-	params, err := entity.NewCreateOfferParams(
-		sellerID,
+func (uc *SellerUsecase) CreateOfferWithNewProduct(ctx context.Context, input dto.CreateOfferWithNewProductInput) (*dto.CreateOfferWithNewProductOutput, error) {
+	profile, err := uc.sellerRepo.FindByUserID(ctx, input.SellerID)
+	if err != nil {
+		return nil, err
+	}
+
+	parentID, err := uc.productRepo.GetParentID(ctx, input.SubCategoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	if parentID != input.CategoryID {
+		return nil, domain.ErrSubCategoryID
+	}
+
+	categoryName, err := uc.productRepo.GetCategoryNameByID(ctx, input.CategoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	subCategoryName, err := uc.productRepo.GetSubCategoryNameByID(ctx, input.SubCategoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	offer, err := entity.NewModerationOffer(input.SellerID,
+		input.CategoryID,
+		input.SubCategoryID,
+		profile.Name,
+		profile.Email,
+		categoryName,
+		subCategoryName,
 		input.ProductName,
 		input.Description,
 		input.Image,
 		input.Price,
 		input.Quantity,
-		input.CategoryName,
-		input.SubCategoryName,
 	)
+
 	if err != nil {
 		return nil, err
 	}
 
-	if err := uc.sellerRepo.CreateOffer(ctx, params); err != nil {
-		return nil, fmt.Errorf("create offer: %w", err)
+	err = uc.moderatorRepo.CreateModerationOffer(ctx, offer)
+	if err != nil {
+		return nil, err
 	}
 
-	return &dto.CreateOfferOutput{
-		Message:         "Created successfully",
-		ProductName:     input.ProductName,
-		Description:     input.Description,
-		Image:           input.Image,
-		Price:           input.Price,
-		Quantity:        input.Quantity,
-		CategoryName:    input.CategoryName,
-		SubCategoryName: input.SubCategoryName,
+	return &dto.CreateOfferWithNewProductOutput{
+		Message:       "Your offer was send for moderation successfully",
+		CategoryID:    offer.CategoryID,
+		SubCategoryID: offer.SubCategoryID,
+		ProductName:   offer.ProductName,
+		Description:   offer.Description,
+		Image:         offer.Image,
+		Price:         offer.Price,
+		Quantity:      offer.Quantity,
 	}, nil
 }
 
 func (uc *SellerUsecase) CreateOfferByExistProducts(ctx context.Context, input dto.CreateOfferByExistProductsInput) (*dto.CreateOfferByExistProductsOutput, error) {
-	offerWithID, err := entity.NewOfferID(input.SellerID, input.CategoryID, input.SubCategoryID, input.ProductID, input.Price, input.Quantity)
+	offerWithID, err := entity.NewOfferWithID(input.SellerID, input.CategoryID, input.SubCategoryID, input.ProductID, input.Price, input.Quantity)
 	if err != nil {
 		return nil, err
 	}

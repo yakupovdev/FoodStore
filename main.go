@@ -60,6 +60,7 @@ func main() {
 	productRepo := impl.NewProductRepo(conn)
 	sellerRepo := impl.NewSellerRepo(conn)
 	transactionRepo := impl.NewTransactionRepository(conn)
+	moderatorRepo := impl.NewModeratorRepo(conn)
 	loggerRepo := impl.NewLogsRepository(conn)
 	adminRepo := impl.NewAdminRepository(conn)
 
@@ -78,8 +79,9 @@ func main() {
 	// Usecases
 	authUsecase, _ := usecase.NewAuthUsecase(userRepo, tokenRepo, tokenSvc)
 	recoveryUsecase, _ := usecase.NewRecoveryUsecase(userRepo, recoveryCodeRepo, codeHasher, tokenSvc, codeGen, emailSender)
+	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo, productRepo, moderatorRepo)
+	moderatorUsecase, _ := usecase.NewModeratorUsecase(moderatorRepo, productRepo, sellerRepo, emailSender)
 	clientUsecase, _ := usecase.NewClientUsecase(clientRepo, orderRepo, productRepo, sellerRepo, transactionRepo, loggerRepo)
-	sellerUsecase, _ := usecase.NewSellerUsecase(sellerRepo, productRepo)
 	adminUsecase, _ := usecase.NewAdminUsecase(userRepo, clientRepo, adminRepo, loggerRepo, checkerAdminKey)
 
 	// Handlers
@@ -89,20 +91,12 @@ func main() {
 	refreshTokenHandler := handler.NewRefreshTokenHandler(authUsecase)
 	clientHandler := handler.NewClientHandler(clientUsecase)
 	sellerHandler := handler.NewSellerHandler(sellerUsecase)
-	adminHandler := handler.NewAdminHandler(adminUsecase)
+	moderatorHandler := handler.NewModeratorHandler(moderatorUsecase)
+  adminHandler := handler.NewAdminHandler(adminUsecase)
 
 	// Router
-	r := httpdelivery.SetupRouter(httpdelivery.RouterDeps{
-		AuthHandler:         authHandler,
-		EmailHandler:        emailHandler,
-		RecoveryHandler:     recoveryHandler,
-		RefreshTokenHandler: refreshTokenHandler,
-		ClientHandler:       clientHandler,
-		SellerHandler:       sellerHandler,
-		AdminHandler:        adminHandler,
-		TokenValidator:      authUsecase,
-		TokenService:        tokenSvc,
-	})
+	deps := httpdelivery.NewRouterDeps(authHandler, emailHandler, recoveryHandler, refreshTokenHandler, clientHandler, sellerHandler, moderatorHandler, adminHandler, authUsecase, tokenSvc)
+	r := httpdelivery.SetupRouter(deps)
 
 	// Server
 	srv := &http.Server{

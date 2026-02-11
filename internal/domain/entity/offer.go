@@ -64,7 +64,7 @@ type OfferWithID struct {
 	Quantity      int64
 }
 
-func NewOfferID(sellerID, categoryID, subCategoryID, productID, price, quantity int64) (*OfferWithID, error) {
+func NewOfferWithID(sellerID, categoryID, subCategoryID, productID, price, quantity int64) (*OfferWithID, error) {
 	if categoryID <= 0 {
 		return nil, domain.ErrCategoryID
 	}

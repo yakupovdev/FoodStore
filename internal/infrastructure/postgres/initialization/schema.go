@@ -20,8 +20,6 @@ var (
 	ErrSellerOffersSchema           = errors.New("seller offers schema error")
 	ErrOrdersSchema                 = errors.New("orders schema error")
 	ErrOrdersItemsSchema            = errors.New("orders items schema error")
-	ErrModerationCategoriesSchema   = errors.New("moderation categories schema error")
-	ErrModerationProductsSchema     = errors.New("moderation products schema error")
 	ErrModerationSellerOffersSchema = errors.New("moderation seller offers schema error")
 	ErrCategoriesAdd                = errors.New("categories add error")
 	ErrProductsAdd                  = errors.New("products add error")
@@ -65,12 +63,6 @@ func InitSchema(ctx context.Context, conn *pg.Conn) error {
 	if err := ensureOrdersItemsSchema(ctx, conn); err != nil {
 		return err
 	}
-	if err := ensureModerationCategoriesSchema(ctx, conn); err != nil {
-		return err
-	}
-	if err := ensureModerationProductsSchema(ctx, conn); err != nil {
-		return err
-	}
 	if err := ensureModerationSellerOffersSchema(ctx, conn); err != nil {
 		return err
 	}
@@ -78,6 +70,12 @@ func InitSchema(ctx context.Context, conn *pg.Conn) error {
 		return err
 	}
 	if err := ensureCartItemsSchema(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureCategoriesForTest(ctx, conn); err != nil {
+		return err
+	}
+	if err := ensureProductsForTest(ctx, conn); err != nil {
 		return err
 	}
 	if err := ensureLogsTransactionSchema(ctx, conn); err != nil {
@@ -274,45 +272,25 @@ CREATE TABLE IF NOT EXISTS orders_items (
 	return nil
 }
 
-func ensureModerationCategoriesSchema(ctx context.Context, conn *pg.Conn) error {
-	_, err := conn.Exec(ctx, `
-CREATE TABLE IF NOT EXISTS moderation_categories (
-    moderation_categories_id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    moderation_parent_id BIGINT REFERENCES moderation_categories(moderation_categories_id) ON DELETE SET NULL
-);`)
-	if err != nil {
-		return ErrModerationCategoriesSchema
-	}
-	return nil
-}
-
-func ensureModerationProductsSchema(ctx context.Context, conn *pg.Conn) error {
-	_, err := conn.Exec(ctx, `
-CREATE TABLE IF NOT EXISTS moderation_products (
-    moderation_product_id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    moderation_categories_id BIGINT NOT NULL REFERENCES moderation_categories(moderation_categories_id),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    img VARCHAR(255)
-);`)
-	if err != nil {
-		return ErrModerationProductsSchema
-	}
-	return nil
-}
-
 func ensureModerationSellerOffersSchema(ctx context.Context, conn *pg.Conn) error {
 	_, err := conn.Exec(ctx, `
 CREATE TABLE IF NOT EXISTS moderation_seller_offers (
     seller_id BIGINT NOT NULL REFERENCES sellers(seller_id) ON DELETE CASCADE,
-    moderation_product_id BIGINT NOT NULL REFERENCES moderation_products(moderation_product_id) ON DELETE CASCADE,
+    seller_name VARCHAR(255) NOT NULL,
+    seller_email VARCHAR(255) NOT NULL,
+    category_id BIGINT NOT NULL REFERENCES categories(categories_id) ON DELETE CASCADE,
+    category_name VARCHAR(255) NOT NULL,
+    subcategory_id BIGINT NOT NULL REFERENCES categories(categories_id) ON DELETE CASCADE,
+    subcategory_name VARCHAR(255) NOT NULL,
+    product_id BIGSERIAL PRIMARY KEY,
+    product_name VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    image VARCHAR(255) NOT NULL,
     price BIGINT NOT NULL,
-    quantity INT NOT NULL DEFAULT 0,
-    PRIMARY KEY (seller_id, moderation_product_id)
+    quantity INT NOT NULL DEFAULT 0
 );`)
 	if err != nil {
+		log.Println(err)
 		return ErrModerationSellerOffersSchema
 	}
 	return nil
