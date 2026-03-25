@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -70,6 +71,7 @@ func (h *AuthHandler) LoginUser(ctx *gin.Context) {
 		case errors.Is(err, domain.ErrInvalidCredentials):
 			ctx.JSON(ErrInvalidCredentials.Status, ErrInvalidCredentials.Response)
 		default:
+			log.Printf("unexpected error during login: %v", err)
 			ctx.JSON(ErrInternal.Status, ErrInternal.Response)
 		}
 		return

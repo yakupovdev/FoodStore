@@ -5,6 +5,7 @@ import (
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/handler"
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/middleware"
 	"github.com/yakupovdev/FoodStore/internal/domain/entity"
+	"github.com/yakupovdev/FoodStore/internal/domain/logger"
 	"github.com/yakupovdev/FoodStore/internal/domain/service"
 	"github.com/yakupovdev/FoodStore/internal/usecase"
 )
@@ -20,6 +21,7 @@ type RouterDeps struct {
 	AdminHandler        *handler.AdminHandler
 	TokenValidator      usecase.TokenValidator
 	TokenService        service.TokenService
+	logger              *logger.Logger
 }
 
 func NewRouterDeps(
@@ -30,9 +32,10 @@ func NewRouterDeps(
 	clientHandler *handler.ClientHandler,
 	sellerHandler *handler.SellerHandler,
 	moderatorHandler *handler.ModeratorHandler,
-  adminHandler        *handler.AdminHandler,
+	adminHandler *handler.AdminHandler,
 	tokenValidator usecase.TokenValidator,
 	tokenService service.TokenService,
+	logger *logger.Logger,
 ) *RouterDeps {
 	return &RouterDeps{
 		AuthHandler:         authHandler,
@@ -42,15 +45,16 @@ func NewRouterDeps(
 		ClientHandler:       clientHandler,
 		SellerHandler:       sellerHandler,
 		ModeratorHandler:    moderatorHandler,
-    AdminHandler:        adminHandler,
+		AdminHandler:        adminHandler,
 		TokenValidator:      tokenValidator,
 		TokenService:        tokenService,
+		logger:              logger,
 	}
 }
 
 func SetupRouter(d *RouterDeps) *gin.Engine {
 	router := gin.Default()
-
+	router.Use(middleware.RequestID(), middleware.Logger(d.logger), middleware.Trace())
 	auth := router.Group("/auth")
 	{
 		auth.POST("/register", d.AuthHandler.RegisterUser)
@@ -84,7 +88,7 @@ func SetupRouter(d *RouterDeps) *gin.Engine {
 			seller.DELETE("/offers", d.SellerHandler.DeleteOffer)
 			seller.POST("/new-offers", d.SellerHandler.CreateOfferWithNewProduct)
 			seller.GET("/products", d.SellerHandler.GetExistProducts)
-      seller.GET("/subscription", d.SellerHandler.PurchaseSubscription)
+			seller.GET("/subscription", d.SellerHandler.PurchaseSubscription)
 		}
 
 		moderator := protected.Group("/moderator")

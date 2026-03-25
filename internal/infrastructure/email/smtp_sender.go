@@ -6,33 +6,33 @@ import (
 )
 
 type SMTPSender struct {
-	from     string
-	password string
-	host     string
-	port     string
+	From     string `envconfig:"SENDER" required:"true"`
+	Password string `envconfig:"PASSWORD" required:"true"`
+	Host     string `envconfig:"HOST" required:"true"`
+	Port     string `envconfig:"PORT" required:"true"`
 }
 
 func NewSMTPSender(from, password, host, port string) *SMTPSender {
 	return &SMTPSender{
-		from:     from,
-		password: password,
-		host:     host,
-		port:     port,
+		From:     from,
+		Password: password,
+		Host:     host,
+		Port:     port,
 	}
 }
 
 func (s *SMTPSender) SendRecoveryCode(_ context.Context, emailTo, code string) error {
 	auth := smtp.PlainAuth(
 		"",
-		s.from,
-		s.password,
-		s.host,
+		s.From,
+		s.Password,
+		s.Host,
 	)
 
 	msg := []byte(
-		"From: FoodStore <" + s.from + ">\r\n" +
+		"From: FoodStore <" + s.From + ">\r\n" +
 			"To:" + emailTo + "\r\n" +
-			"Subject: Test Email from FoodStore\r\n" +
+			"Subject: Test Email From FoodStore\r\n" +
 			"MIME-Version: 1.0\r\n" +
 			"Content-UserType: text/plain; charset=\"UTF-8\"\r\n" +
 			"\r\n" +
@@ -40,9 +40,9 @@ func (s *SMTPSender) SendRecoveryCode(_ context.Context, emailTo, code string) e
 	)
 
 	return smtp.SendMail(
-		s.host+":"+s.port,
+		s.Host+":"+s.Port,
 		auth,
-		s.from,
+		s.From,
 		[]string{emailTo},
 		msg,
 	)
@@ -51,24 +51,24 @@ func (s *SMTPSender) SendRecoveryCode(_ context.Context, emailTo, code string) e
 func (s *SMTPSender) SendMessage(emailTo, message string) error {
 	auth := smtp.PlainAuth(
 		"",
-		s.from,
-		s.password,
-		s.host,
+		s.From,
+		s.Password,
+		s.Host,
 	)
 
 	msg := []byte(
-		"From: FoodStore <" + s.from + ">\r\n" +
+		"From: FoodStore <" + s.From + ">\r\n" +
 			"To:" + emailTo + "\r\n" +
-			"Subject: Test Email from FoodStore\r\n" +
+			"Subject: Test Email From FoodStore\r\n" +
 			"MIME-Version: 1.0\r\n" +
 			"Content-UserType: text/plain; charset=\"UTF-8\"\r\n" +
 			"\r\n" + message + "\n",
 	)
 
 	return smtp.SendMail(
-		s.host+":"+s.port,
+		s.Host+":"+s.Port,
 		auth,
-		s.from,
+		s.From,
 		[]string{emailTo},
 		msg,
 	)
