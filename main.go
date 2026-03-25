@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
+	logger "github.com/yakupovdev/FoodStore/internal/domain/logger"
 	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres/impl"
 	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres/initialization"
 
@@ -24,24 +25,23 @@ import (
 func main() {
 	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel()
-
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
+		log.Printf("Error loading .env file: %v", err)
 	}
-	database := os.Getenv("DATABASE")
-	host := os.Getenv("HOST")
-	portStr := os.Getenv("PORT")
-	port, _ := strconv.ParseUint(portStr, 10, 16)
-	username := os.Getenv("USER")
-	password := os.Getenv("PASSWORD")
 
+	var pgConfig initialization.Config
+	err := envconfig.Process("foodstore", &pgConfig)
+	if err != nil {
+		log.Fatalf("Failed to load environment variables: %v", err)
+	}
 	conn, err := initialization.NewConnection(appCtx, initialization.Config{
-		Database: database,
-		Host:     host,
-		Port:     uint16(port),
-		Username: username,
-		Password: password,
+		Database: pgConfig.Database,
+		Host:     pgConfig.Host,
+		Port:     pgConfig.Port,
+		User:     pgConfig.User,
+		Password: pgConfig.Password,
 	})
+
 	if err != nil {
 		panic(err)
 	}
@@ -51,6 +51,19 @@ func main() {
 		panic(err)
 	}
 
+	logger, err := logger.NewLogger(logger.NewConfigMust())
+	if err != nil {
+		log.Fatalf("Failed to initialize logger: %v", err)
+		os.Exit(1)
+	}
+	defer logger.Close()
+	logger.Info("starting FoodStore API server...")
+
+	var smtpConfig email.SMTPSender
+	if err := envconfig.Process("email", &smtpConfig); err != nil {
+		log.Fatalf("Failed to load email configuration: %v", err)
+		os.Exit(1)
+	}
 	// Repository
 	userRepo := impl.NewUserRepo(conn)
 	tokenRepo := impl.NewTokenRepo(conn)
@@ -69,10 +82,10 @@ func main() {
 	tokenSvc := security.NewJWTService()
 	codeGen := security.NewRandomCodeGenerator()
 	emailSender := email.NewSMTPSender(
-		os.Getenv("EMAIL_SENDER"),
-		os.Getenv("EMAIL_PASSWORD"),
-		os.Getenv("EMAIL_HOST"),
-		os.Getenv("EMAIL_PORT"),
+		smtpConfig.From,
+		smtpConfig.Password,
+		smtpConfig.Host,
+		smtpConfig.Port,
 	)
 	checkerAdminKey := security.NewCheckerAdminKey(os.Getenv("SECRET_KEY"))
 
@@ -92,16 +105,17 @@ func main() {
 	clientHandler := handler.NewClientHandler(clientUsecase)
 	sellerHandler := handler.NewSellerHandler(sellerUsecase)
 	moderatorHandler := handler.NewModeratorHandler(moderatorUsecase)
-  adminHandler := handler.NewAdminHandler(adminUsecase)
+	adminHandler := handler.NewAdminHandler(adminUsecase)
 
 	// Router
-	deps := httpdelivery.NewRouterDeps(authHandler, emailHandler, recoveryHandler, refreshTokenHandler, clientHandler, sellerHandler, moderatorHandler, adminHandler, authUsecase, tokenSvc)
+	deps := httpdelivery.NewRouterDeps(authHandler, emailHandler, recoveryHandler, refreshTokenHandler, clientHandler, sellerHandler, moderatorHandler, adminHandler, authUsecase, tokenSvc, logger)
 	r := httpdelivery.SetupRouter(deps)
 
 	// Server
 	srv := &http.Server{
-		Addr:         ":9000",
-		Handler:      r,
+		Addr:    ":9000",
+		Handler: r,
+
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,

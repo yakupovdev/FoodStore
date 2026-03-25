@@ -108,6 +108,7 @@ func (h *ClientHandler) CreateOrder(ctx *gin.Context) {
 			ctx.JSON(ErrNotEnoughQuantity.Status, ErrNotEnoughQuantity.Response)
 			return
 		}
+		log.Println(err, "error creating order in CreateOrder")
 		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
 		return
 	}

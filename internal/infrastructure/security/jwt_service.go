@@ -2,6 +2,7 @@ package security
 
 import (
 	"errors"
+	"log"
 	"os"
 	"time"
 
@@ -38,6 +39,7 @@ var tokenTypeToTTL = map[entity.TokenType]time.Duration{
 
 func (s *JWTService) GenerateToken(userID int64, userType string, tokenType entity.TokenType) (string, error) {
 	if err := godotenv.Load(); err != nil {
+		log.Printf("Error loading .env file,ETOOO PIZDAAAA")
 		return "", err
 	}
 

@@ -11,7 +11,7 @@ type Config struct {
 	Database string
 	Host     string
 	Port     uint16
-	Username string
+	User     string
 	Password string
 }
 
@@ -21,7 +21,7 @@ func NewConnection(ctx context.Context, cfg Config) (*pg.Conn, error) {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
 
-	opts.User = cfg.Username
+	opts.User = cfg.User
 	opts.Password = cfg.Password
 	opts.Host = cfg.Host
 	opts.Port = cfg.Port
