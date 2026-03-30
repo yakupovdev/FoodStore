@@ -1,6 +1,8 @@
 package http
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/handler"
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/middleware"
@@ -22,6 +24,7 @@ type RouterDeps struct {
 	TokenValidator      usecase.TokenValidator
 	TokenService        service.TokenService
 	logger              *logger.Logger
+	limiter             *middleware.IPLimiter
 }
 
 func NewRouterDeps(
@@ -36,6 +39,7 @@ func NewRouterDeps(
 	tokenValidator usecase.TokenValidator,
 	tokenService service.TokenService,
 	logger *logger.Logger,
+	limiter *middleware.IPLimiter,
 ) *RouterDeps {
 	return &RouterDeps{
 		AuthHandler:         authHandler,
@@ -49,12 +53,20 @@ func NewRouterDeps(
 		TokenValidator:      tokenValidator,
 		TokenService:        tokenService,
 		logger:              logger,
+		limiter:             limiter,
 	}
 }
 
 func SetupRouter(d *RouterDeps) *gin.Engine {
 	router := gin.Default()
-	router.Use(middleware.RequestID(), middleware.Logger(d.logger), middleware.Trace())
+	router.SetTrustedProxies([]string{"nginx"})
+
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	router.Use(d.limiter.Middleware(), middleware.RequestID(), middleware.Logger(d.logger), middleware.Trace())
+
 	auth := router.Group("/auth")
 	{
 		auth.POST("/register", d.AuthHandler.RegisterUser)

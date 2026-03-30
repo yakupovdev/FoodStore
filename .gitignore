@@ -64,3 +64,5 @@ out/logs/
 # postgres database files
 # ======================
 /out/data
+nginx/logs
+fail2ban/data

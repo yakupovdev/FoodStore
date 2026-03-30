@@ -11,9 +11,11 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/yakupovdev/FoodStore/internal/delivery/http/middleware"
 	logger "github.com/yakupovdev/FoodStore/internal/domain/logger"
 	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres/impl"
 	"github.com/yakupovdev/FoodStore/internal/infrastructure/postgres/initialization"
+	"golang.org/x/time/rate"
 
 	httpdelivery "github.com/yakupovdev/FoodStore/internal/delivery/http"
 	"github.com/yakupovdev/FoodStore/internal/delivery/http/handler"
@@ -25,6 +27,7 @@ import (
 func main() {
 	appCtx, appCancel := context.WithCancel(context.Background())
 	defer appCancel()
+	limiter := middleware.NewIPLimiter(appCtx, rate.Every(100*time.Millisecond), 20)
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Error loading .env file: %v", err)
 	}
@@ -108,7 +111,7 @@ func main() {
 	adminHandler := handler.NewAdminHandler(adminUsecase)
 
 	// Router
-	deps := httpdelivery.NewRouterDeps(authHandler, emailHandler, recoveryHandler, refreshTokenHandler, clientHandler, sellerHandler, moderatorHandler, adminHandler, authUsecase, tokenSvc, logger)
+	deps := httpdelivery.NewRouterDeps(authHandler, emailHandler, recoveryHandler, refreshTokenHandler, clientHandler, sellerHandler, moderatorHandler, adminHandler, authUsecase, tokenSvc, logger, limiter)
 	r := httpdelivery.SetupRouter(deps)
 
 	// Server
