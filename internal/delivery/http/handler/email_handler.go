@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -37,6 +38,7 @@ func (h *EmailHandler) SendCodeByEmail(ctx *gin.Context) {
 		case errors.Is(err, domain.ErrUserNotFound):
 			ctx.JSON(ErrUserNotFound.Status, ErrUserNotFound.Response)
 		default:
+			log.Println(err)
 			ctx.JSON(ErrInternal.Status, ErrInternal.Response)
 		}
 		return
@@ -49,6 +51,7 @@ func (h *EmailHandler) VerifyCode(ctx *gin.Context) {
 	var req dto.VerifyCodeInput
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Println(err)
 		ctx.JSON(ErrInvalidJSON.Status, ErrInvalidJSON.Response)
 		return
 	}

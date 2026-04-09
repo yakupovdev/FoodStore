@@ -81,6 +81,7 @@ func main() {
 	codeHasher := security.NewSHA256CodeHasher()
 	tokenSvc := security.NewJWTService()
 	codeGen := security.NewRandomCodeGenerator()
+	log.Println(smtpConfig)
 	emailSender := email.NewSMTPSender(
 		smtpConfig.From,
 		smtpConfig.Password,

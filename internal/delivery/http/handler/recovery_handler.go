@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -38,6 +39,7 @@ func (h *RecoveryHandler) ResetUserPassword(ctx *gin.Context) {
 
 	err := h.uc.ResetPassword(ctx.Request.Context(), req)
 	if err != nil {
+		log.Println(err)
 		ctx.JSON(ErrInternal.Status, ErrInternal.Response)
 		return
 	}
