@@ -122,7 +122,7 @@ func main() {
 	}
 
 	go func() {
-		log.Println("Starting server on :9000")
+		log.Println("Starting server on:", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
 		}
