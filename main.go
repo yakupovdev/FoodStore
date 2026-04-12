@@ -39,12 +39,12 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	database := os.Getenv("DATABASE")
-	host := os.Getenv("HOST")
-	portStr := os.Getenv("PORT")
+	database := os.Getenv("FOODSTORE_DATABASE")
+	host := os.Getenv("FOODSTORE_HOST")
+	portStr := os.Getenv("FOODSTORE_PORT")
 	port, _ := strconv.ParseUint(portStr, 10, 16)
-	username := os.Getenv("USER")
-	password := os.Getenv("PASSWORD")
+	username := os.Getenv("FOODSTORE_USER")
+	password := os.Getenv("FOODSTORE_PASSWORD")
 
 	conn, err := initialization.NewConnection(appCtx, initialization.Config{
 		Database: database,
